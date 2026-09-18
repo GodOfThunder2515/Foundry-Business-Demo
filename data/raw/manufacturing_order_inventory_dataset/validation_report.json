@@ -1,0 +1,23 @@
+{
+  "all_checks_passed": true,
+  "checks": {
+    "all_expected_csv_nonempty": true,
+    "customers_count": true,
+    "products_count": true,
+    "sales_order_count": true,
+    "purchase_order_count": true,
+    "production_order_count": true,
+    "installment_like_large_fact": true,
+    "sales_lines_present": true,
+    "production_operations_present": true,
+    "all_money_nonnegative": true,
+    "sales_line_order_fk": true,
+    "shipment_order_fk": true,
+    "purchase_line_order_fk": true,
+    "production_operation_order_fk": true,
+    "invoice_order_fk": true
+  },
+  "generated_at": "2026-09-15T09:23:38.921577+00:00",
+  "raw_bytes": 501435836,
+  "raw_gb": 0.467
+}

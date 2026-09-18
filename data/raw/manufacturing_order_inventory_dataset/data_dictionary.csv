@@ -1,0 +1,37 @@
+file_name,primary_key_or_grain,business_role,notes
+sites.csv,site_id,Site dimension,Plants and operating locations.
+warehouses.csv,warehouse_id,Warehouse dimension,Raw material and finished goods warehouses.
+customers.csv,customer_id,Customer dimension,Customer master and commercial attributes.
+customers_contacts.csv,contact_id,Customer contact dimension,Operational contacts with hashed identifiers.
+suppliers.csv,supplier_id,Supplier dimension,Supplier commercial and risk attributes.
+products.csv,product_id,Product dimension,Finished goods semi-finished goods raw materials and packaging.
+bills_of_materials.csv,bom_id,BOM dimension,Effective BOM versions and routing references.
+bom_components.csv,bom_component_id,BOM component fact,Required component quantities and issue methods.
+work_centers.csv,work_center_id,Work center dimension,Plant capacity and efficiency attributes.
+demand_forecast.csv,forecast_id,Demand forecast fact,Monthly product-location forecast versions.
+sales_orders.csv,sales_order_id,Sales order fact,Order header lifecycle value priority and backlog status.
+sales_order_lines.csv,sales_order_line_id,Sales order line fact,Ordered allocated shipped and backordered quantities.
+sales_order_status_history.csv,status_event_id,Order lifecycle event,Status transitions and exception reasons.
+purchase_orders.csv,purchase_order_id,Purchase order fact,Supplier commitments and receipt risk.
+purchase_order_lines.csv,purchase_order_line_id,Purchase order line fact,Material quantities costs receipts and status.
+goods_receipts.csv,receipt_id,Goods receipt fact,Accepted rejected and quality-held inbound quantities.
+production_orders.csv,production_order_id,Production order fact,Planned actual completed scrap and shortage status.
+production_operations.csv,operation_id,Production operation fact,Work center schedule actual hours downtime and output.
+material_reservations.csv,reservation_id,Material reservation fact,Required reserved issued and shortage quantities.
+inventory_lots.csv,lot_id,Inventory lot fact,On-hand available blocked quantity and quality status.
+inventory_transactions.csv,inventory_transaction_id,Inventory movement fact,Production issues receipts and warehouse movements.
+shipments.csv,shipment_id,Shipment fact,Planned actual delivery and OTIF performance.
+shipment_lines.csv,shipment_line_id,Shipment line fact,Shipped and short-shipped quantities by order line.
+invoices.csv,invoice_id,Accounts receivable fact,Invoice value due date status and outstanding amount.
+invoice_lines.csv,invoice_line_id,Invoice line fact,Invoiced quantities discounts tax and line value.
+cash_receipts.csv,cash_receipt_id,Cash receipt fact,Customer receipts channels and days to pay.
+quality_inspections.csv,inspection_id,Quality inspection fact,Sampling results defect rates and holds.
+nonconformances.csv,nc_id,Quality exception fact,Root cause disposition closure and cost of quality.
+customer_returns.csv,return_id,Returns header fact,Return authorization status and credit exposure.
+return_lines.csv,return_line_id,Returns line fact,Returned received restocked and scrapped quantities.
+maintenance_work_orders.csv,maintenance_order_id,Maintenance fact,Asset failures downtime priorities and cost.
+daily_operations_snapshots.csv,snapshot_date + site_id,Control tower fact,Daily service inventory production quality supplier and AR KPIs.
+supplier_monthly_scorecard.csv,scorecard_month + supplier_id,Supplier performance fact,Monthly delivery quality lead time spend and risk signal.
+validation_report.json,validation artifact,Validation evidence,Generated relationship and volume checks.
+dataset_summary.json,metadata artifact,Dataset metadata,Generated row counts scale and archive metrics.
+README.md,document,Implementation guide,Microsoft Fabric Power BI Azure ML Power Apps Power Automate and Foundry guidance.

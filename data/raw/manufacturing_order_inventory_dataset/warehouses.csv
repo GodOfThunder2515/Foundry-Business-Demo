@@ -1,0 +1,17 @@
+warehouse_id,site_id,warehouse_code,warehouse_name,warehouse_type,storage_capacity_cbm,temperature_controlled_flag,active_flag
+WH0001,S001,IN-W1-01,Pune Raw Material Warehouse,raw_material,738.0,N,Y
+WH0002,S001,IN-W1-02,Pune Finished Goods Warehouse,finished_goods,574.0,N,Y
+WH0003,S002,IN-W1-01,Nashik Raw Material Warehouse,raw_material,504.0,N,Y
+WH0004,S002,IN-W1-02,Nashik Finished Goods Warehouse,finished_goods,392.0,N,Y
+WH0005,S003,IN-W2-01,Ahmedabad Raw Material Warehouse,raw_material,666.0,N,Y
+WH0006,S003,IN-W2-02,Ahmedabad Finished Goods Warehouse,finished_goods,518.0,N,Y
+WH0007,S004,IN-S1-01,Bengaluru Raw Material Warehouse,raw_material,612.0,N,Y
+WH0008,S004,IN-S1-02,Bengaluru Finished Goods Warehouse,finished_goods,476.0,Y,Y
+WH0009,S005,IN-S2-01,Hyderabad Raw Material Warehouse,raw_material,468.0,N,Y
+WH0010,S005,IN-S2-02,Hyderabad Finished Goods Warehouse,finished_goods,364.0,N,Y
+WH0011,S006,IN-N1-01,Delhi Raw Material Warehouse,raw_material,414.0,N,Y
+WH0012,S006,IN-N1-02,Delhi Finished Goods Warehouse,finished_goods,322.0,N,Y
+WH0013,S007,IN-E1-01,Kolkata Raw Material Warehouse,raw_material,369.0,N,Y
+WH0014,S007,IN-E1-02,Kolkata Finished Goods Warehouse,finished_goods,287.0,Y,Y
+WH0015,S008,IN-C1-01,Indore Raw Material Warehouse,raw_material,351.0,N,Y
+WH0016,S008,IN-C1-02,Indore Finished Goods Warehouse,finished_goods,273.0,N,Y

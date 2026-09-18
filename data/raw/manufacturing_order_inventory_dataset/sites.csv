@@ -1,0 +1,9 @@
+site_id,site_code,site_name,site_type,region,city,state,country,timezone,capacity_units_per_month,active_flag
+S001,IN-W1,Pune Powertrain Plant,plant,West,Pune,Maharashtra,India,Asia/Kolkata,82000,Y
+S002,IN-W1,Nashik Components Plant,plant,West,Nashik,Maharashtra,India,Asia/Kolkata,56000,Y
+S003,IN-W2,Ahmedabad Assembly Plant,plant,West,Ahmedabad,Gujarat,India,Asia/Kolkata,74000,Y
+S004,IN-S1,Bengaluru Electronics Plant,plant,South,Bengaluru,Karnataka,India,Asia/Kolkata,68000,Y
+S005,IN-S2,Hyderabad Fabrication Plant,plant,South,Hyderabad,Telangana,India,Asia/Kolkata,52000,Y
+S006,IN-N1,Delhi Finished Goods Plant,plant,North,Delhi,Delhi,India,Asia/Kolkata,46000,Y
+S007,IN-E1,Kolkata Industrial Plant,plant,East,Kolkata,West Bengal,India,Asia/Kolkata,41000,Y
+S008,IN-C1,Indore Components Plant,plant,Central,Indore,Madhya Pradesh,India,Asia/Kolkata,39000,Y
