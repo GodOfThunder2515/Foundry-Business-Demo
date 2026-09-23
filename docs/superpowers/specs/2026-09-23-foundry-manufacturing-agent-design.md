@@ -56,7 +56,7 @@ The upload process may map upstream filenames to these interface names without c
 ## High-level architecture
 
 ```text
-User or CLI
+User in Foundry Playground
     |
     v
 Foundry Prompt Agent
@@ -256,7 +256,7 @@ The V1 upload contract is CSV because the repository's connected Code Interprete
 
 ### Conversation
 
-The CLI creates one Foundry conversation and uses the persisted prompt-agent reference for each response. A conversation normally reuses one Code Interpreter session, reducing repeated loading work. Session state is only a performance optimization; every answer still records scope, filters, and data-as-of information.
+Foundry Playground is the V1 chat surface and uses the persisted prompt-agent version. A conversation normally reuses one Code Interpreter session, reducing repeated loading work. Session state is only a performance optimization; every answer still records scope, filters, and data-as-of information. SDK conversations are used only by automated validation and evaluation.
 
 For each question:
 
@@ -268,7 +268,7 @@ For each question:
 6. Pass the intended final result through `analysis_helper.py`.
 7. Explain the result in business language.
 
-The built-in Code Interpreter call is orchestrated by Foundry; the CLI does not implement the custom function-call loop used by the repository's existing sales stub.
+The built-in Code Interpreter call is orchestrated by Foundry; V1 does not maintain an interactive CLI or the custom function-call loop used by the repository's existing sales stub.
 
 ## Analysis-result contract
 
@@ -409,7 +409,7 @@ Implementation should remain small and reuse the current SDK pattern. The antici
 - knowledge and instruction files described above;
 - one generic analysis helper;
 - one agent creation/upload script based on the working validation script;
-- an updated CLI that invokes the prompt agent without the regional-sales function tool;
+- a persistent prompt-agent deployment script and Foundry Playground as the chat surface;
 - one lightweight golden-evaluation dataset and runner;
 - small tests for context budgets, catalog validity, result caps, and local oracle calculations.
 
