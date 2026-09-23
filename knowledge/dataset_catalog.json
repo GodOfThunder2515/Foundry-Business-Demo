@@ -1,0 +1,101 @@
+{
+  "snapshot": {"id": "epic_soca_6rn73kkx4n", "data_as_of": "2026-09-15", "historical_start": "2026-06-01", "commitment_end": "2026-09-30"},
+  "tables": {
+    "dim_customer": {
+      "filename": "dim_customer.csv", "grain": "one row per customer", "primary_key": ["customer_key"], "evidence_class": "dimension",
+      "columns": {"customer_key":"int32","customer_id":"string","customer_code":"string","customer_name":"string","customer_type":"string","industry":"string","city":"string","state":"string","country":"string","service_level":"string","payment_terms_days":"int64","credit_limit":"decimal128(18, 4)","account_status":"string","created_date":"date32[day]"},
+      "joins": [], "date_fields": {"created_date": "customer creation date"}, "aggregation_warnings": ["Do not sum customer credit limits after joining to sales lines."]
+    },
+    "dim_date": {
+      "filename": "dim_date.csv", "grain": "one row per calendar date", "primary_key": ["date_key"], "evidence_class": "dimension",
+      "columns": {"date_key":"int32","date":"date32[day]","day":"int32","day_name":"string","day_of_week":"int32","week_of_year":"int32","month":"int32","month_name":"string","month_year":"string","quarter":"int32","quarter_name":"string","year":"int32","financial_month":"int32","financial_quarter":"string","financial_year":"string","is_weekend":"bool"},
+      "joins": [], "date_fields": {"date": "calendar date"}, "aggregation_warnings": ["The dimension ends on 2026-09-15; parse later fact date keys directly as yyyyMMdd."]
+    },
+    "dim_product": {
+      "filename": "dim_product.csv", "grain": "one row per product", "primary_key": ["product_key"], "evidence_class": "dimension",
+      "columns": {"product_key":"int32","product_id":"string","lead_time_days":"int64","standard_cost":"decimal128(18, 4)","sku":"string","safety_stock_units":"int64","list_price":"decimal128(18, 4)","product_name":"string","reorder_point_units":"int64","product_type":"string","lot_size_units":"int64","product_family":"string","uom":"string","make_buy_flag":"string","active_flag":"string","load_timestamp":"timestamp[us, tz=UTC]"},
+      "joins": [], "date_fields": {}, "aggregation_warnings": ["Costs and prices are product attributes, not additive measures."]
+    },
+    "dim_region": {
+      "filename": "dim_region.csv", "grain": "one row per region", "primary_key": ["region_key"], "evidence_class": "dimension",
+      "columns": {"region_key":"int32","region":"string"},
+      "joins": [], "date_fields": {}, "aggregation_warnings": ["No documented relationship connects this dimension to the supplied facts; do not use it for attribution."]
+    },
+    "dim_supplier": {
+      "filename": "dim_supplier.csv", "grain": "one row per supplier", "primary_key": ["supplier_key"], "evidence_class": "dimension",
+      "columns": {"supplier_key":"int32","supplier_id":"string","supplier_code":"string","supplier_name":"string","supplier_type":"string","city":"string","state":"string","country":"string","payment_terms_days":"int64","on_time_baseline_pct":"decimal128(18, 4)","quality_baseline_pct":"decimal128(18, 4)","risk_tier":"string","active_flag":"string"},
+      "joins": [], "date_fields": {}, "aggregation_warnings": ["Supplier baselines are attributes; compare or average only with an explicit weighting rule."]
+    },
+    "dim_warehouse": {
+      "filename": "dim_warehouse.csv", "grain": "one row per warehouse", "primary_key": ["warehouse_key"], "evidence_class": "dimension",
+      "columns": {"warehouse_key":"int32","warehouse_id":"string","storage_capacity_cbm":"decimal128(18, 4)","site_id":"string","warehouse_code":"string","warehouse_name":"string","warehouse_type":"string","temperature_controlled_flag":"string","active_flag":"string","load_timestamp":"timestamp[us, tz=UTC]"},
+      "joins": [], "date_fields": {}, "aggregation_warnings": ["Join through warehouse_key; warehouse code alone is not the relationship contract."]
+    },
+    "fact_finance": {
+      "filename": "fact_finance.csv", "grain": "one row per invoice and receipt state", "primary_key": ["invoice_id"], "evidence_class": "recorded_fact",
+      "columns": {"invoice_id":"string","invoice_number":"string","sales_order_id":"string","customer_key":"int32","invoice_date_key":"int32","due_date_key":"int32","receipt_date_key":"int32","invoice_status":"string","subtotal":"decimal128(18, 4)","tax_amount":"decimal128(18, 4)","freight_amount":"decimal128(18, 4)","invoice_total":"decimal128(18, 4)","outstanding_amount":"decimal128(18, 4)","invoice_line_count":"int64","total_invoiced_qty":"int64","total_discount_amount":"decimal128(28, 4)","line_tax_amount":"decimal128(28, 4)","line_total_amount":"decimal128(28, 4)","cash_receipt_id":"string","payment_channel":"string","bank_reference_hash":"string","receipt_status":"string","receipt_amount":"decimal128(18, 4)","calculated_outstanding_amount":"decimal128(19, 4)","invoice_date":"date32[day]","due_date":"date32[day]","receipt_date":"date32[day]","invoice_load_timestamp":"timestamp[us, tz=UTC]"},
+      "joins": [{"table":"dim_customer","left":"customer_key","right":"customer_key","cardinality":"many_to_one"},{"table":"dim_date","left":"invoice_date_key","right":"date_key","cardinality":"many_to_one"},{"table":"dim_date","left":"due_date_key","right":"date_key","cardinality":"many_to_one"},{"table":"dim_date","left":"receipt_date_key","right":"date_key","cardinality":"many_to_one"}],
+      "date_fields": {"invoice_date_key":"invoice date","due_date_key":"payment due date","receipt_date_key":"receipt date"}, "aggregation_warnings": ["Aggregate invoices to sales_order_id before comparing with order-level sales; never join invoice rows directly to sales lines and sum both sides."]
+    },
+    "fact_inventory_lots": {
+      "filename": "fact_inventory_lots.csv", "grain": "one row per inventory lot and warehouse state", "primary_key": ["lot_id"], "evidence_class": "snapshot",
+      "columns": {"lot_id":"string","product_key":"int32","warehouse_key":"int32","supplier_key":"int32","manufacture_date_key":"int32","expiry_date_key":"int32","quality_status":"string","on_hand_qty":"decimal128(18, 4)","available_qty":"decimal128(18, 4)","blocked_qty":"decimal128(18, 4)","unit_cost":"decimal128(18, 4)","inventory_value":"decimal128(37, 8)","manufacture_date":"date32[day]","expiry_date":"date32[day]","load_timestamp":"timestamp[us, tz=UTC]"},
+      "joins": [{"table":"dim_product","left":"product_key","right":"product_key","cardinality":"many_to_one"},{"table":"dim_warehouse","left":"warehouse_key","right":"warehouse_key","cardinality":"many_to_one"},{"table":"dim_supplier","left":"supplier_key","right":"supplier_key","cardinality":"many_to_one"}],
+      "date_fields": {"manufacture_date_key":"manufacture date","expiry_date_key":"expiry date"}, "aggregation_warnings": ["Use available_qty and exclude blocked, held, or expired stock when discussing recovery."]
+    },
+    "fact_inventory_transactions": {
+      "filename": "fact_inventory_transactions.csv", "grain": "one row per inventory movement", "primary_key": ["inventory_transaction_id"], "evidence_class": "recorded_fact",
+      "columns": {"inventory_transaction_id":"string","product_key":"int32","warehouse_key":"int32","transaction_date_key":"int32","lot_id":"string","reference_type":"string","reference_id":"string","transaction_type":"string","inventory_status":"string","reason_code":"string","quantity_in":"decimal128(18, 4)","quantity_out":"decimal128(18, 4)","net_quantity":"decimal128(19, 4)","unit_cost":"decimal128(18, 4)","inventory_value":"decimal128(38, 8)","transaction_timestamp":"timestamp[us, tz=UTC]","load_timestamp":"timestamp[us, tz=UTC]"},
+      "joins": [{"table":"dim_product","left":"product_key","right":"product_key","cardinality":"many_to_one"},{"table":"dim_warehouse","left":"warehouse_key","right":"warehouse_key","cardinality":"many_to_one"},{"table":"dim_date","left":"transaction_date_key","right":"date_key","cardinality":"many_to_one"}],
+      "date_fields": {"transaction_date_key":"movement date","transaction_timestamp":"movement timestamp"}, "aggregation_warnings": ["Transactions are movements, not current stock; use inventory lots for the current recovery position."]
+    },
+    "fact_material_reservations": {
+      "filename": "fact_material_reservations.csv", "grain": "one row per production material reservation", "primary_key": ["reservation_id"], "evidence_class": "recorded_fact",
+      "columns": {"reservation_id":"string","production_order_id":"string","product_key":"int32","warehouse_key":"int32","required_date_key":"int32","reservation_status":"string","required_qty":"decimal128(18, 4)","reserved_qty":"decimal128(18, 4)","issued_qty":"decimal128(18, 4)","short_qty":"decimal128(18, 4)","reservation_fill_pct":"decimal128(38, 20)","required_date":"date32[day]","load_timestamp":"timestamp[us, tz=UTC]"},
+      "joins": [{"table":"dim_product","left":"product_key","right":"product_key","cardinality":"many_to_one"},{"table":"dim_warehouse","left":"warehouse_key","right":"warehouse_key","cardinality":"many_to_one"},{"table":"dim_date","left":"required_date_key","right":"date_key","cardinality":"many_to_one"}],
+      "date_fields": {"required_date_key":"material required date"}, "aggregation_warnings": ["No supplied bridge links a production reservation to a sales-order line; describe product/site/time overlap only as an associated signal."]
+    },
+    "fact_operations_snapshot": {
+      "filename": "fact_operations_snapshot.csv", "grain": "one row per site, warehouse, and snapshot date", "primary_key": ["site_id","warehouse_key","snapshot_date_key"], "evidence_class": "snapshot",
+      "columns": {"site_id":"string","warehouse_key":"int32","snapshot_date_key":"int32","open_sales_orders":"int64","orders_due_7d":"int64","backorder_lines":"int64","production_plan_qty":"int64","production_completed_qty":"int64","supplier_late_po_count":"int64","quality_hold_qty":"int64","sales_order_value_open":"decimal128(18, 4)","inventory_value":"decimal128(18, 4)","inventory_accuracy_pct":"decimal128(18, 4)","production_attainment_pct":"decimal128(18, 4)","scrap_rate_pct":"decimal128(18, 4)","on_time_ship_pct":"decimal128(18, 4)","otif_pct":"decimal128(18, 4)","ar_overdue_amount":"decimal128(18, 4)","snapshot_date":"date32[day]","data_refresh_timestamp":"timestamp[us, tz=UTC]","load_timestamp":"timestamp[us, tz=UTC]"},
+      "joins": [{"table":"dim_warehouse","left":"warehouse_key","right":"warehouse_key","cardinality":"many_to_one"},{"table":"dim_date","left":"snapshot_date_key","right":"date_key","cardinality":"many_to_one"}],
+      "date_fields": {"snapshot_date_key":"KPI snapshot date"}, "aggregation_warnings": ["The supplied history is about 30 days; do not claim a four-month KPI trend from this table."]
+    },
+    "fact_procurement": {
+      "filename": "fact_procurement.csv", "grain": "one row per purchase-order line", "primary_key": ["purchase_order_line_id"], "evidence_class": "recorded_fact",
+      "columns": {"purchase_order_line_id":"string","purchase_order_id":"string","po_number":"string","supplier_key":"int32","product_key":"int32","warehouse_key":"int32","order_date_key":"int32","expected_receipt_date_key":"int32","promised_receipt_date_key":"int32","actual_receipt_date_key":"int32","po_status":"string","currency":"string","buyer_id":"string","late_risk_flag":"string","line_number":"int64","line_status":"string","ordered_qty":"int64","received_qty":"int64","accepted_qty":"int64","rejected_qty":"int64","quality_hold_qty":"int64","pending_qty":"int64","unit_cost":"decimal128(18, 4)","line_value":"decimal128(18, 4)","accepted_value":"decimal128(38, 4)","rejected_value":"decimal128(38, 4)","receipt_pct":"double","load_timestamp":"timestamp[us, tz=UTC]"},
+      "joins": [{"table":"dim_supplier","left":"supplier_key","right":"supplier_key","cardinality":"many_to_one"},{"table":"dim_product","left":"product_key","right":"product_key","cardinality":"many_to_one"},{"table":"dim_warehouse","left":"warehouse_key","right":"warehouse_key","cardinality":"many_to_one"},{"table":"dim_date","left":"expected_receipt_date_key","right":"date_key","cardinality":"many_to_one"}],
+      "date_fields": {"order_date_key":"purchase order date","expected_receipt_date_key":"expected receipt date","promised_receipt_date_key":"supplier promise date","actual_receipt_date_key":"actual receipt date"}, "aggregation_warnings": ["Do not claim a purchase-order line caused a customer-line risk without a valid BOM or reservation bridge."]
+    },
+    "fact_quality_inspections": {
+      "filename": "fact_quality_inspections.csv", "grain": "one row per quality inspection", "primary_key": ["inspection_id"], "evidence_class": "recorded_fact",
+      "columns": {"inspection_id":"string","product_key":"int32","inspection_date_key":"int32","inspection_type":"string","reference_type":"string","reference_id":"string","inspector_id":"string","product_id":"string","lot_id":"string","inspection_result":"string","hold_flag":"string","sample_qty":"int64","passed_qty":"int64","failed_qty":"int64","defect_rate_pct":"decimal128(18, 4)","inspection_date":"date32[day]","load_timestamp":"timestamp[us, tz=UTC]"},
+      "joins": [{"table":"dim_product","left":"product_key","right":"product_key","cardinality":"many_to_one"},{"table":"dim_date","left":"inspection_date_key","right":"date_key","cardinality":"many_to_one"}],
+      "date_fields": {"inspection_date_key":"inspection date"}, "aggregation_warnings": ["Reference IDs may identify production records but no production-to-sales bridge is supplied; qualify customer-line attribution."]
+    },
+    "fact_quality_nonconformances": {
+      "filename": "fact_quality_nonconformances.csv", "grain": "one row per quality nonconformance", "primary_key": ["nc_id"], "evidence_class": "recorded_fact",
+      "columns": {"nc_id":"string","product_key":"int32","opened_date_key":"int32","closure_date_key":"int32","nc_number":"string","reference_type":"string","reference_id":"string","product_id":"string","lot_id":"string","nc_category":"string","severity":"string","root_cause_category":"string","disposition":"string","quantity_affected":"int64","cost_of_quality":"decimal128(18, 4)","opened_date":"date32[day]","closure_date":"date32[day]","load_timestamp":"timestamp[us, tz=UTC]"},
+      "joins": [{"table":"dim_product","left":"product_key","right":"product_key","cardinality":"many_to_one"},{"table":"dim_date","left":"opened_date_key","right":"date_key","cardinality":"many_to_one"}],
+      "date_fields": {"opened_date_key":"nonconformance open date","closure_date_key":"nonconformance closure date"}, "aggregation_warnings": ["A recorded root cause applies to the nonconformance, not automatically to a customer commitment."]
+    },
+    "fact_sales": {
+      "filename": "fact_sales.csv", "grain": "one row per sales-order line", "primary_key": ["sales_order_line_id"], "evidence_class": "recorded_fact",
+      "columns": {"sales_order_line_id":"string","sales_order_id":"string","customer_key":"int32","product_key":"int32","warehouse_key":"int32","order_date_key":"int32","requested_ship_date_key":"int32","promised_ship_date_key":"int32","requested_delivery_date_key":"int32","order_number":"string","line_number":"int64","currency":"string","channel":"string","priority":"string","order_status":"string","line_status":"string","hold_reason":"string","ordered_qty":"int64","allocated_qty":"int64","shipped_qty":"int64","backordered_qty":"int64","unit_price":"decimal128(18, 4)","discount_pct":"decimal128(18, 4)","tax_pct":"decimal128(18, 4)","line_value":"decimal128(18, 4)","backorder_flag":"string","load_timestamp":"timestamp[us, tz=UTC]"},
+      "joins": [{"table":"dim_customer","left":"customer_key","right":"customer_key","cardinality":"many_to_one"},{"table":"dim_product","left":"product_key","right":"product_key","cardinality":"many_to_one"},{"table":"dim_warehouse","left":"warehouse_key","right":"warehouse_key","cardinality":"many_to_one"},{"table":"dim_date","left":"order_date_key","right":"date_key","cardinality":"many_to_one"}],
+      "date_fields": {"order_date_key":"order date","requested_ship_date_key":"requested ship date","promised_ship_date_key":"promised ship date","requested_delivery_date_key":"requested delivery date"}, "aggregation_warnings": ["Establish quantities and value at sales_order_line_id before joining or aggregating; future promise keys can extend beyond dim_date."]
+    },
+    "fact_shipments": {
+      "filename": "fact_shipments.csv", "grain": "one row per shipment line", "primary_key": ["shipment_line_id"], "evidence_class": "recorded_fact",
+      "columns": {"shipment_line_id":"string","shipment_id":"string","sales_order_line_id":"string","sales_order_id":"string","product_key":"int32","warehouse_key":"int32","customer_key":"int32","actual_ship_date_key":"int32","planned_ship_date_key":"int32","planned_delivery_date_key":"int32","actual_delivery_date_key":"int32","shipment_number":"string","carrier":"string","service_level":"string","shipment_status":"string","otd_flag":"string","exception_code":"string","line_status":"string","lot_id":"string","shipped_qty":"int64","short_ship_qty":"int64","allocated_freight_cost":"decimal128(38, 6)","load_timestamp":"timestamp[us, tz=UTC]"},
+      "joins": [{"table":"fact_sales","left":"sales_order_line_id","right":"sales_order_line_id","cardinality":"many_to_one"},{"table":"dim_product","left":"product_key","right":"product_key","cardinality":"many_to_one"},{"table":"dim_warehouse","left":"warehouse_key","right":"warehouse_key","cardinality":"many_to_one"},{"table":"dim_customer","left":"customer_key","right":"customer_key","cardinality":"many_to_one"},{"table":"dim_date","left":"actual_ship_date_key","right":"date_key","cardinality":"many_to_one"}],
+      "date_fields": {"actual_ship_date_key":"actual ship date","planned_ship_date_key":"planned ship date","planned_delivery_date_key":"planned delivery date","actual_delivery_date_key":"actual delivery date"}, "aggregation_warnings": ["Aggregate multiple shipment lines to sales_order_line_id before joining to sales measures."]
+    }
+  },
+  "prediction_interfaces": {
+    "late_order_risk_predictions.csv": {"entity_key":"sales_order_line_id","required_columns":["sales_order_line_id","prediction_timestamp","model_name","model_version","probability","risk_band","reason_codes"]},
+    "supplier_receipt_risk_predictions.csv": {"entity_key":"purchase_order_line_id","required_columns":["purchase_order_line_id","prediction_timestamp","model_name","model_version","probability","risk_band","reason_codes"]},
+    "production_completion_risk_predictions.csv": {"entity_key":"production_order_id","required_columns":["production_order_id","prediction_timestamp","model_name","model_version","probability","risk_band","reason_codes"]},
+    "quality_risk_predictions.csv": {"entity_key":"scored_entity_id","required_columns":["scored_entity_id","prediction_timestamp","model_name","model_version","probability","risk_band","reason_codes"]}
+  }
+}
