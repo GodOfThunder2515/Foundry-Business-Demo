@@ -1,70 +1,210 @@
+"""Deploy or clean up the persistent manufacturing prompt agent."""
+
+from __future__ import annotations
+
+import argparse
+import json
 import os
 import sys
+from collections.abc import Callable, Mapping, Sequence
+from datetime import UTC, datetime
 from pathlib import Path
-
-from azure.ai.projects import AIProjectClient
-from azure.ai.projects.models import PromptAgentDefinition
-from azure.identity import DefaultAzureCredential
-from azure.ai.projects.models import (
-    PromptAgentDefinition,
-    FunctionTool,
-)
-from dotenv import load_dotenv
+from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
-from src.instructions import BUSINESS_ANALYTICS_INSTRUCTIONS
+from src.agent_assets import collect_upload_paths, compose_instructions
 
 
-load_dotenv()
-
-project_endpoint = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
-model_deployment = os.environ["FOUNDRY_MODEL_DEPLOYMENT"]
-agent_name = os.environ["FOUNDRY_AGENT_NAME"]
-
-
-project = AIProjectClient(
-    endpoint=project_endpoint,
-    credential=DefaultAzureCredential(),
+GOLD_CSV_DIR = (
+    ROOT
+    / "data/gold_snapshots/epic_soca_6rn73kkx4n/named-outputs/snapshot/csv"
 )
+PREDICTION_DIR = ROOT / "data/predictions"
+HELPER_PATH = ROOT / "src/analysis_helper.py"
+CATALOG_PATH = ROOT / "knowledge/dataset_catalog.json"
+KNOWLEDGE_DIR = ROOT / "knowledge"
+INSTRUCTIONS_PATH = ROOT / "src/agent_instructions.md"
+STATE_PATH = ROOT / ".foundry/manufacturing-agent-state.json"
+APPROVED_MODEL = "gpt-4.1-mini"
 
-sales_tool = FunctionTool(
-    name="get_sales_performance",
-    description=(
-        "Get company sales actuals, targets, and ML forecasts "
-        "for all sales regions for a specified period. "
-        "Use this tool whenever answering company-specific questions "
-        "about regional sales performance, targets, or forecasts."
-    ),
-    parameters={
-        "type": "object",
-        "properties": {
-            "period": {
-                "type": "string",
-                "description": (
-                    "The period requested by the user, "
-                    "for example 'next month'."
+
+def required_config(environ: Mapping[str, str]) -> dict[str, str]:
+    names = (
+        "FOUNDRY_PROJECT_ENDPOINT",
+        "FOUNDRY_MODEL_DEPLOYMENT",
+        "FOUNDRY_AGENT_NAME",
+    )
+    missing = [name for name in names if not environ.get(name, "").strip()]
+    if missing:
+        raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
+    if environ["FOUNDRY_MODEL_DEPLOYMENT"] != APPROVED_MODEL:
+        raise ValueError(
+            f"FOUNDRY_MODEL_DEPLOYMENT must be {APPROVED_MODEL!r} for this demo"
+        )
+    return {
+        "project_endpoint": environ["FOUNDRY_PROJECT_ENDPOINT"],
+        "model_deployment": environ["FOUNDRY_MODEL_DEPLOYMENT"],
+        "agent_name": environ["FOUNDRY_AGENT_NAME"],
+    }
+
+
+def load_state(path: Path) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError(f"Deployment state must be a JSON object: {path}")
+    return value
+
+
+def save_state(path: Path, state: Mapping[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
+    temporary.replace(path)
+
+
+def provision_resources(
+    openai: Any,
+    upload_paths: Sequence[Path],
+    create_agent: Callable[[list[str]], Any],
+) -> tuple[Any, list[str]]:
+    file_ids: list[str] = []
+    try:
+        for path in upload_paths:
+            with path.open("rb") as handle:
+                uploaded = openai.files.create(purpose="assistants", file=handle)
+            file_ids.append(uploaded.id)
+        return create_agent(file_ids), file_ids
+    except Exception:
+        for file_id in file_ids:
+            try:
+                openai.files.delete(file_id)
+            except Exception:
+                pass
+        raise
+
+
+def cleanup_recorded_resources(
+    project: Any, openai: Any, state: Mapping[str, Any]
+) -> None:
+    project.agents.delete_version(
+        agent_name=state["agent_name"],
+        agent_version=state["agent_version"],
+    )
+    for file_id in state["file_ids"]:
+        openai.files.delete(file_id)
+
+
+def _clients(config: Mapping[str, str]):
+    from azure.ai.projects import AIProjectClient
+    from azure.identity import DefaultAzureCredential
+
+    credential = DefaultAzureCredential()
+    project = AIProjectClient(
+        endpoint=config["project_endpoint"], credential=credential
+    )
+    return credential, project
+
+
+def deploy(*, replace: bool = False) -> None:
+    from azure.ai.projects.models import (
+        AutoCodeInterpreterToolParam,
+        CodeInterpreterTool,
+        PromptAgentDefinition,
+    )
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    config = required_config(os.environ)
+    previous = load_state(STATE_PATH)
+    if previous is not None and not replace:
+        raise RuntimeError(
+            f"Deployment state already exists at {STATE_PATH}. Use 'replace' or 'cleanup'."
+        )
+
+    instructions = compose_instructions(KNOWLEDGE_DIR, INSTRUCTIONS_PATH)
+    upload_paths, warnings = collect_upload_paths(
+        GOLD_CSV_DIR, HELPER_PATH, CATALOG_PATH, PREDICTION_DIR
+    )
+
+    credential, project = _clients(config)
+    with credential, project, project.get_openai_client() as openai:
+        def create_agent(file_ids: list[str]):
+            return project.agents.create_version(
+                agent_name=config["agent_name"],
+                definition=PromptAgentDefinition(
+                    model=config["model_deployment"],
+                    instructions=instructions,
+                    tools=[
+                        CodeInterpreterTool(
+                            container=AutoCodeInterpreterToolParam(file_ids=file_ids)
+                        )
+                    ],
                 ),
-            },
-        },
-        "required": ["period"],
-        "additionalProperties": False,
-    },
-    strict=True,
-)
+                description="Manufacturing control-tower demo agent",
+            )
 
-agent = project.agents.create_version(
-    agent_name=agent_name,
-    definition=PromptAgentDefinition(
-        model=model_deployment,
-        instructions=BUSINESS_ANALYTICS_INSTRUCTIONS,
-        tools=[sales_tool],
-    ),
-)
+        agent, file_ids = provision_resources(openai, upload_paths, create_agent)
+        state = {
+            "agent_name": agent.name,
+            "agent_version": str(agent.version),
+            "file_ids": file_ids,
+            "snapshot_id": "epic_soca_6rn73kkx4n",
+            "created_at": datetime.now(UTC).isoformat(),
+        }
+        save_state(STATE_PATH, state)
 
-print("Agent created successfully")
-print(f"Name: {agent.name}")
-print(f"Version: {agent.version}")
-print(f"ID: {agent.id}")
+        if previous is not None:
+            try:
+                cleanup_recorded_resources(project, openai, previous)
+            except Exception as error:
+                print(f"WARNING: previous deployment cleanup failed: {error}")
+
+    print(f"Agent deployed: {state['agent_name']} version {state['agent_version']}")
+    print(f"Uploaded files: {len(state['file_ids'])}")
+    for warning in warnings:
+        print(f"WARNING: {warning}")
+    print("Open Build > Agents in Microsoft Foundry and select this agent to chat.")
+
+
+def cleanup() -> None:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    config = required_config(os.environ)
+    state = load_state(STATE_PATH)
+    if state is None:
+        print("No recorded manufacturing-agent deployment to clean up.")
+        return
+
+    credential, project = _clients(config)
+    with credential, project, project.get_openai_client() as openai:
+        cleanup_recorded_resources(project, openai, state)
+    STATE_PATH.unlink()
+    print(
+        f"Deleted agent {state['agent_name']} version {state['agent_version']} "
+        f"and {len(state['file_ids'])} uploaded files."
+    )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("command", choices=("deploy", "replace", "cleanup"))
+    args = parser.parse_args()
+    try:
+        if args.command == "cleanup":
+            cleanup()
+        else:
+            deploy(replace=args.command == "replace")
+    except Exception as error:
+        print(f"FAIL: {type(error).__name__}: {error}")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
