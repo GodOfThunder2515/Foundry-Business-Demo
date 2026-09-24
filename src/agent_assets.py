@@ -7,11 +7,11 @@ from pathlib import Path
 
 
 TABLE_CONTEXT_LIMIT = 12_000
-PREDICTION_FILENAMES = (
-    "late_order_risk_predictions.csv",
-    "supplier_receipt_risk_predictions.csv",
-    "production_completion_risk_predictions.csv",
-    "quality_risk_predictions.csv",
+RISK_TABLE_FILENAMES = (
+    "late_order_risk.csv",
+    "late_order_risk_factors.csv",
+    "late_order_model_metrics.csv",
+    "order_operational_evidence.csv",
 )
 
 
@@ -40,7 +40,7 @@ def collect_upload_paths(
     gold_csv_dir: Path,
     helper_path: Path,
     catalog_path: Path,
-    prediction_dir: Path | None = None,
+    risk_table_dir: Path | None = None,
 ) -> tuple[list[Path], list[str]]:
     if not helper_path.is_file():
         raise FileNotFoundError(f"Required agent asset not found: {helper_path.name}")
@@ -56,11 +56,9 @@ def collect_upload_paths(
         paths.append(path)
     paths.extend((helper_path, catalog_path))
 
-    warnings: list[str] = []
-    for filename in PREDICTION_FILENAMES:
-        path = prediction_dir / filename if prediction_dir is not None else None
-        if path is not None and path.is_file():
-            paths.append(path)
-        else:
-            warnings.append(f"Optional prediction file not found: {filename}")
-    return paths, warnings
+    for filename in RISK_TABLE_FILENAMES:
+        path = risk_table_dir / filename if risk_table_dir is not None else None
+        if path is None or not path.is_file():
+            raise FileNotFoundError(f"Required risk table not found: {filename}")
+        paths.append(path)
+    return paths, []

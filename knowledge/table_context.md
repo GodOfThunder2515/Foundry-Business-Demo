@@ -30,4 +30,10 @@
 
 `dim_region` — Region grain; key `region_key`. No documented relationship to facts; do not use for quantitative attribution.
 
-Optional prediction interfaces: `late_order_risk_predictions.csv` at sales-line grain, `supplier_receipt_risk_predictions.csv` at PO-line grain, `production_completion_risk_predictions.csv` at production-order grain, and `quality_risk_predictions.csv` at its declared scored-entity grain. Report prediction timestamp, model name/version, probability/band, and separate reason codes from confirmed operational causes.
+`late_order_risk` — One replay score per sales-order line. Use `late_probability` for likelihood of late first shipment and `intervention_priority_score`/band for action prioritization. Active queue statuses are `OPEN_NOT_YET_DUE` and `OVERDUE_NOT_SHIPPED`. The business snapshot is 2026-09-15; generation timestamp 2026-09-23 identifies a replay, not a live score.
+
+`late_order_risk_factors` — Ranked model-explanation rows per prediction. Factor contributions explain the model score; they do not prove operational causation. Select or aggregate factors before joining.
+
+`order_operational_evidence` — Rule-derived as-of operational signals directly keyed to scored sales lines. Use severity, confidence, matching basis, and source reference as supporting evidence, while avoiding unsupported causal claims.
+
+`late_order_model_metrics` — Model-evaluation rows for 2026-09-01 through 2026-09-15 at overall and segment grain. Use these to qualify reliability, always with sample size; never use them as individual-line predictions.

@@ -17,7 +17,7 @@ FOUNDRY_MODEL_DEPLOYMENT=gpt-4.1-mini
 FOUNDRY_AGENT_NAME=manufacturing-control-tower-agent
 ```
 
-The deployment expects the 16 CSV files under `data/gold_snapshots/epic_soca_6rn73kkx4n/named-outputs/snapshot/csv/`. Four prediction files under `data/predictions/` are optional; missing predictions are reported as limitations and do not block the core demo.
+The deployment expects the 16 CSV files under `data/gold_snapshots/epic_soca_6rn73kkx4n/named-outputs/snapshot/csv/` and four required late-order-risk CSVs under `data/bi_tables/`. The risk package contains line-level replay scores, ranked model factors, operational evidence, and model metrics. Parquet duplicates are not uploaded.
 
 ## Deploy and use the Playground
 

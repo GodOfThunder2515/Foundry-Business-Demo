@@ -65,15 +65,15 @@ class CollectUploadsTests(unittest.TestCase):
         catalog_copy.write_text(json.dumps(catalog), encoding="utf-8")
         return gold, helper, catalog_copy
 
-    def test_collects_16_gold_files_plus_helper_and_catalog(self):
+    def test_missing_risk_tables_fail_before_upload(self):
         with tempfile.TemporaryDirectory() as directory:
-            gold, helper, catalog = self.create_required_files(Path(directory))
+            root = Path(directory)
+            gold, helper, catalog = self.create_required_files(root)
+            risk_tables = root / "risk_tables"
+            risk_tables.mkdir()
 
-            paths, warnings = collect_upload_paths(gold, helper, catalog)
-
-            self.assertEqual(len(paths), 18)
-            self.assertEqual(len(warnings), 4)
-            self.assertTrue(all("Optional prediction file not found" in warning for warning in warnings))
+            with self.assertRaisesRegex(FileNotFoundError, "late_order_risk.csv"):
+                collect_upload_paths(gold, helper, catalog, risk_tables)
 
     def test_missing_gold_file_prevents_upload(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -83,20 +83,26 @@ class CollectUploadsTests(unittest.TestCase):
             with self.assertRaisesRegex(FileNotFoundError, "fact_sales.csv"):
                 collect_upload_paths(gold, helper, catalog)
 
-    def test_present_predictions_are_appended_and_missing_ones_warn(self):
+    def test_appends_all_four_required_risk_tables(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             gold, helper, catalog = self.create_required_files(root)
-            predictions = root / "predictions"
-            predictions.mkdir()
-            prediction = predictions / "late_order_risk_predictions.csv"
-            prediction.touch()
+            risk_tables = root / "risk_tables"
+            risk_tables.mkdir()
+            names = (
+                "late_order_risk.csv",
+                "late_order_risk_factors.csv",
+                "late_order_model_metrics.csv",
+                "order_operational_evidence.csv",
+            )
+            for name in names:
+                (risk_tables / name).touch()
 
-            paths, warnings = collect_upload_paths(gold, helper, catalog, predictions)
+            paths, warnings = collect_upload_paths(gold, helper, catalog, risk_tables)
 
-            self.assertEqual(len(paths), 19)
-            self.assertEqual(paths[-1], prediction)
-            self.assertEqual(len(warnings), 3)
+            self.assertEqual(len(paths), 22)
+            self.assertEqual([path.name for path in paths[-4:]], list(names))
+            self.assertEqual(warnings, [])
 
     def test_missing_helper_or_catalog_fails_before_upload(self):
         with tempfile.TemporaryDirectory() as directory:

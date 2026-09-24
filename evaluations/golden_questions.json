@@ -113,8 +113,8 @@
   },
   {
     "id": "prediction_availability",
-    "question": "Rank the top late-order risks using the Azure ML prediction output, including prediction timestamp and model version. If the prediction file is unavailable, state exactly what cannot be calculated and do not invent scores.",
-    "smoke": false, "requires_code_interpreter": false, "expected_metrics": {},
-    "required_qualifiers": ["cannot"], "forbidden_claims": ["predicted probability is"], "max_detail_rows": 10
+    "question": "Rank the top late-order risks using the late-order risk package. Include the business as-of date, replay-generation timestamp, model version, ranking measure, and no more than 10 lines. Keep model factors, operational evidence, and confirmed causes distinct.",
+    "smoke": false, "requires_code_interpreter": true, "expected_metrics": {},
+    "required_qualifiers": ["2026-09-15", "2026-09-23", "logistic_regression", "v1", ["replay", "retrospective"]], "forbidden_claims": ["live prediction", "model factor proves the cause"], "max_detail_rows": 10
   }
 ]

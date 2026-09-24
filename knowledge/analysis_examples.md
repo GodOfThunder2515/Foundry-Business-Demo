@@ -1,6 +1,6 @@
 ## 1. Risk ranking
 
-For “Which commitments need attention?”, define active statuses and the requested due window, analyze every matching sales line, join only needed dimensions, add a versioned risk prediction when available, rank deterministically, and return the population plus no more than 10 lines. If predictions are absent, rank only by documented operational evidence and say so.
+For “Which commitments are most at risk?”, filter `late_order_risk` to the requested promise window and active queue statuses, then rank by `late_probability` with deterministic business tie-breakers. Explain model factors separately from operational evidence, disclose `logistic_regression:v1`, the 2026-08-31 training cutoff, the 2026-09-15 snapshot, and the 2026-09-23 replay-generation timestamp. Return the full population and no more than 10 lines in the final answer.
 
 ## 2. Period comparison
 

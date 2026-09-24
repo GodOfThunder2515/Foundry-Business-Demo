@@ -92,10 +92,42 @@
       "date_fields": {"actual_ship_date_key":"actual ship date","planned_ship_date_key":"planned ship date","planned_delivery_date_key":"planned delivery date","actual_delivery_date_key":"actual delivery date"}, "aggregation_warnings": ["Aggregate multiple shipment lines to sales_order_line_id before joining to sales measures."]
     }
   },
-  "prediction_interfaces": {
-    "late_order_risk_predictions.csv": {"entity_key":"sales_order_line_id","required_columns":["sales_order_line_id","prediction_timestamp","model_name","model_version","probability","risk_band","reason_codes"]},
-    "supplier_receipt_risk_predictions.csv": {"entity_key":"purchase_order_line_id","required_columns":["purchase_order_line_id","prediction_timestamp","model_name","model_version","probability","risk_band","reason_codes"]},
-    "production_completion_risk_predictions.csv": {"entity_key":"production_order_id","required_columns":["production_order_id","prediction_timestamp","model_name","model_version","probability","risk_band","reason_codes"]},
-    "quality_risk_predictions.csv": {"entity_key":"scored_entity_id","required_columns":["scored_entity_id","prediction_timestamp","model_name","model_version","probability","risk_band","reason_codes"]}
+  "risk_tables": {
+    "late_order_risk": {
+      "filename": "late_order_risk.csv",
+      "grain": "one replay prediction per scored sales-order line",
+      "primary_key": ["prediction_id"],
+      "evidence_class": "model_prediction",
+      "columns": {"prediction_id":"string","sales_order_line_id":"string","sales_order_id":"string","order_number":"string","line_number":"int64","customer_id":"string","customer_name":"string","product_id":"string","product_name":"string","product_family":"string","site_id":"string","warehouse_id":"string","prediction_timestamp":"timestamp","late_probability":"double","late_probability_percentile":"double","predicted_late_flag":"int64","decision_threshold":"double","model_name":"string","model_version":"string","training_data_cutoff":"date","feature_contract_version":"string","explanation_baseline_probability":"double","priority_as_of_date":"date","late_probability_score":"double","line_value_score":"double","customer_service_score":"double","promise_urgency_score":"double","intervention_priority_score":"double","intervention_priority_percentile":"double","intervention_priority_band":"string","priority_formula_version":"string","ordered_qty":"int64","line_value":"decimal","expected_line_value_at_risk":"double","customer_service_level":"string","source_order_priority":"string","order_date":"date","requested_ship_date":"date","promised_ship_date":"date","days_to_promise":"int64","within_14_day_window":"bool","operational_queue_status":"string","first_actual_ship_date":"date","shipment_delay_days":"int64","days_late":"int64","outcome_status":"string","outcome_known_at":"date","final_late_flag":"int64","prediction_result":"string","evaluation_eligible":"bool","evaluation_exclusion_reason":"string","data_quality_warning":"string"},
+      "joins": [{"table":"fact_sales","left":"sales_order_line_id","right":"sales_order_line_id","cardinality":"one_to_one"}],
+      "usage_rules": ["For a 2026-09-15 forward-looking answer, use priority_as_of_date, late_probability, predicted_late_flag, intervention priority, and fields known at the snapshot.","Treat prediction_timestamp 2026-09-23 as replay-generation metadata and disclose that these are replay scores, not scores generated live on 2026-09-15.","Exclude CANCELLED and SHIPPED_BY_SNAPSHOT from active commitment rankings; use OPEN_NOT_YET_DUE and OVERDUE_NOT_SHIPPED.","Do not use first_actual_ship_date, shipment_delay_days, days_late, outcome_status, outcome_known_at, final_late_flag, prediction_result, or evaluation fields in prospective answers because they are later outcome/evaluation data.","late_probability estimates late-first-shipment risk; intervention_priority_score ranks action priority and must not be described as probability.","expected_line_value_at_risk is a model-derived expected exposure, not booked loss or confirmed revenue loss."]
+    },
+    "late_order_risk_factors": {
+      "filename": "late_order_risk_factors.csv",
+      "grain": "one ranked model factor contribution per prediction",
+      "primary_key": ["prediction_id","factor_rank"],
+      "evidence_class": "model_explanation",
+      "columns": {"prediction_id":"string","sales_order_line_id":"string","factor_rank":"int64","factor_name":"string","factor_display_name":"string","factor_value":"string","contribution_direction":"string","contribution_percentage_points":"double","explanation_method":"string","model_version":"string"},
+      "joins": [{"table":"late_order_risk","left":"prediction_id","right":"prediction_id","cardinality":"many_to_one"}],
+      "usage_rules": ["Use the lowest factor_rank values as the leading model drivers for a prediction.","A contribution explains model behavior and is not a proven operational cause.","Aggregate or select factors before joining to scores so prediction counts, quantities, and values are not multiplied."]
+    },
+    "late_order_model_metrics": {
+      "filename": "late_order_model_metrics.csv",
+      "grain": "one model evaluation row per period, segment type, and segment value",
+      "primary_key": ["model_name","model_version","evaluation_period","segment_type","segment_value"],
+      "evidence_class": "model_evaluation",
+      "columns": {"model_name":"string","model_version":"string","evaluation_period":"string","segment_type":"string","segment_value":"string","eligible_line_count":"int64","late_line_count":"int64","late_rate":"double","recall":"double","precision":"double","false_positive_count":"int64","false_negative_count":"int64","PR_AUC":"double","ROC_AUC":"double","Brier_score":"double","calibration_error":"double","decision_threshold":"double","top_5_pct_late_capture":"double","top_10_pct_late_capture":"double","top_20_pct_late_capture":"double"},
+      "joins": [],
+      "usage_rules": ["Use the overall row for headline model quality and matching segment rows only for the requested slice.","Metrics describe evaluation performance for 2026-09-01_to_2026-09-15; they do not identify whether an individual line will be late.","Report eligible sample size with precision, recall, discrimination, or calibration metrics."]
+    },
+    "order_operational_evidence": {
+      "filename": "order_operational_evidence.csv",
+      "grain": "one rule-derived operational evidence signal per prediction",
+      "primary_key": ["prediction_id","evidence_code","source_record_id"],
+      "evidence_class": "derived_operational_evidence",
+      "columns": {"prediction_id":"string","sales_order_line_id":"string","evidence_code":"string","evidence_description":"string","evidence_value":"string","severity":"string","matching_basis":"string","confidence":"string","source_table":"string","source_record_id":"string","evidence_as_of_date":"date","rule_version":"string"},
+      "joins": [{"table":"late_order_risk","left":"prediction_id","right":"prediction_id","cardinality":"many_to_one"}],
+      "usage_rules": ["Use evidence_as_of_date 2026-09-15 signals to support the risk explanation after selecting the scored sales lines.","Keep operational evidence separate from model factors: it is rule-derived evidence, while factors explain the model score.","A signal can support an association or recorded condition but does not by itself prove end-to-end causation.","Aggregate evidence before joining to scores so prediction counts, quantities, and values are not multiplied."]
+    }
   }
 }

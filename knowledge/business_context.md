@@ -20,6 +20,16 @@ Customer demand begins at sales-order-line grain. Warehouses allocate and ship f
 4. **Analytical inference:** a clearly labelled interpretation supported by facts.
 5. **Proposal:** an unexecuted recovery option requiring human review.
 
+## Late-order risk replay
+
+The four BI risk tables form one late-order model package. `late_order_risk` contains line-level scores from `logistic_regression:v1`, trained through 2026-08-31 and replayed for the 2026-09-15 business snapshot. The files were generated on 2026-09-23, so describe them as replay predictions rather than scores available live on September 15.
+
+- `late_probability` is the estimated probability of late first shipment.
+- `intervention_priority_score` combines risk with value, customer service level, and promise urgency to prioritize attention; it is not a probability.
+- `expected_line_value_at_risk` is model-derived expected exposure, not confirmed loss.
+- Model factors explain what moved a score. Operational-evidence rows describe rule-derived conditions. Neither alone proves causation.
+- Outcome and evaluation fields—including actual ship date, delay, final outcome, and true/false-positive result—are hindsight fields. Do not use them in a forward-looking answer as of 2026-09-15.
+
 ## Measures
 
 - Backlog and revenue at risk start from active sales-order lines and their remaining/backordered quantities and line value. State the exact status and date filters.

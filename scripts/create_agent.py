@@ -22,7 +22,7 @@ GOLD_CSV_DIR = (
     ROOT
     / "data/gold_snapshots/epic_soca_6rn73kkx4n/named-outputs/snapshot/csv"
 )
-PREDICTION_DIR = ROOT / "data/predictions"
+RISK_TABLE_DIR = ROOT / "data/bi_tables"
 HELPER_PATH = ROOT / "src/analysis_helper.py"
 CATALOG_PATH = ROOT / "knowledge/dataset_catalog.json"
 KNOWLEDGE_DIR = ROOT / "knowledge"
@@ -171,7 +171,7 @@ def deploy(*, replace: bool = False) -> None:
 
     instructions = compose_instructions(KNOWLEDGE_DIR, INSTRUCTIONS_PATH)
     upload_paths, warnings = collect_upload_paths(
-        GOLD_CSV_DIR, HELPER_PATH, CATALOG_PATH, PREDICTION_DIR
+        GOLD_CSV_DIR, HELPER_PATH, CATALOG_PATH, RISK_TABLE_DIR
     )
 
     credential, project = _clients(config)
