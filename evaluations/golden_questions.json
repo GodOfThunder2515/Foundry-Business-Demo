@@ -1,0 +1,120 @@
+[
+  {
+    "id": "active_commitments_due_7d",
+    "question": "As of 2026-09-15, analyze fact_sales rows where order_status is open, on_hold, or partially_shipped and promised_ship_date_key is at least 20260915 and less than 20260922. Report metrics named lines, orders, line_value, ordered_qty, and backordered_qty.",
+    "smoke": true,
+    "requires_code_interpreter": true,
+    "expected_metrics": {"lines":{"value":"673"},"orders":{"value":"270"},"line_value":{"value":"3001707.54","tolerance":"0.01"},"ordered_qty":{"value":"23551"},"backordered_qty":{"value":"17722"}},
+    "required_qualifiers": ["2026-09-15"], "forbidden_claims": ["live data"], "max_detail_rows": 10
+  },
+  {
+    "id": "active_commitments_due_14d",
+    "question": "As of 2026-09-15, analyze fact_sales rows where order_status is open, on_hold, or partially_shipped and promised_ship_date_key is at least 20260915 and less than 20260929. Report metrics named lines, orders, line_value, ordered_qty, and backordered_qty.",
+    "smoke": true,
+    "requires_code_interpreter": true,
+    "expected_metrics": {"lines":{"value":"1369"},"orders":{"value":"537"},"line_value":{"value":"6612240.06","tolerance":"0.01"},"ordered_qty":{"value":"46849"},"backordered_qty":{"value":"34657"}},
+    "required_qualifiers": ["2026-09-15"], "forbidden_claims": ["live data"], "max_detail_rows": 10
+  },
+  {
+    "id": "pune_commitments_due_7d",
+    "question": "What is the active commitment exposure for the Pune Finished Goods Warehouse (warehouse_key 2) over the next seven days from 2026-09-15? Filter fact_sales order_status to open, on_hold, or partially_shipped and promised_ship_date_key from 20260915 inclusive to 20260922 exclusive, then report metrics named lines, orders, line_value, ordered_qty, and backordered_qty.",
+    "smoke": true,
+    "requires_code_interpreter": true,
+    "expected_metrics": {"lines":{"value":"45"},"orders":{"value":"22"},"line_value":{"value":"202341.20","tolerance":"0.01"},"ordered_qty":{"value":"1375"},"backordered_qty":{"value":"1019"}},
+    "required_qualifiers": ["Pune", "2026-09-15"], "forbidden_claims": ["confirmed supplier cause"], "max_detail_rows": 10
+  },
+  {
+    "id": "inventory_snapshot",
+    "question": "Using every row in fact_inventory_lots.csv with no date, product, warehouse, or status filter, summarize the inventory-lot snapshot. Report lots as the row count; on_hand_qty, available_qty, and blocked_qty as column sums; and non_released_lots as the count where quality_status != 'released'. Do not describe snapshot inventory as a live feed.",
+    "smoke": true,
+    "requires_code_interpreter": true,
+    "expected_metrics": {"lots":{"value":"250000"},"on_hand_qty":{"value":"18459294.789","tolerance":"0.01"},"available_qty":{"value":"18361833.990","tolerance":"0.01"},"blocked_qty":{"value":"97460.799","tolerance":"0.01"},"non_released_lots":{"value":"22161"}},
+    "required_qualifiers": ["snapshot"], "forbidden_claims": ["live inventory"], "max_detail_rows": 10
+  },
+  {
+    "id": "overdue_finance",
+    "question": "As of 2026-09-15, use every row in fact_finance.csv for invoices and sum the column named outstanding_amount, not calculated_outstanding_amount. In Python define the overdue mask exactly as (due_date < '2026-09-15') & (outstanding_amount > 0); overdue_invoices is the number of rows in that mask and overdue_amount is the sum of outstanding_amount in that mask. Report metrics named invoices, outstanding_amount, overdue_invoices, and overdue_amount.",
+    "smoke": true,
+    "requires_code_interpreter": true,
+    "expected_metrics": {"invoices":{"value":"123405"},"outstanding_amount":{"value":"213123675.30","tolerance":"0.01"},"overdue_invoices":{"value":"25848"},"overdue_amount":{"value":"195897462.03","tolerance":"0.01"}},
+    "required_qualifiers": ["2026-09-15"], "forbidden_claims": ["all customers are on credit hold"], "max_detail_rows": 10
+  },
+  {
+    "id": "backlog_concentration",
+    "question": "Where is active backordered value concentrated by customer and product family as of 2026-09-15? Rank the groups and explain the affected population.",
+    "smoke": false, "requires_code_interpreter": true, "expected_metrics": {},
+    "required_qualifiers": ["2026-09-15"], "forbidden_claims": ["confirmed cause"], "max_detail_rows": 10
+  },
+  {
+    "id": "monthly_commitment_comparison",
+    "question": "Compare active commitment value promised in June, July, August, and September 2026. Explain how the 2026-09-15 snapshot affects the comparison.",
+    "smoke": false, "requires_code_interpreter": true, "expected_metrics": {},
+    "required_qualifiers": ["partial"], "forbidden_claims": ["four complete months"], "max_detail_rows": 10
+  },
+  {
+    "id": "warehouse_transfer_opportunity",
+    "question": "For the products with the largest active backorders due in the next 14 days, identify potential finished-goods warehouse transfer opportunities using currently available lots. Explain exclusions and approval needs.",
+    "smoke": false, "requires_code_interpreter": true, "expected_metrics": {},
+    "required_qualifiers": ["approval"], "forbidden_claims": ["transfer completed"], "max_detail_rows": 10
+  },
+  {
+    "id": "shipment_otif",
+    "question": "How did shipment timeliness and short-shipment quantities change in August versus partial September through 2026-09-15? State the measure interpretation.",
+    "smoke": false, "requires_code_interpreter": true, "expected_metrics": {},
+    "required_qualifiers": ["partial"], "forbidden_claims": ["semantic model definition"], "max_detail_rows": 10
+  },
+  {
+    "id": "carrier_exceptions",
+    "question": "Which carriers and exception codes account for the largest short-shipment quantities from June through 2026-09-15? Rank no more than 15 groups.",
+    "smoke": false, "requires_code_interpreter": true, "expected_metrics": {},
+    "required_qualifiers": ["2026-09-15"], "forbidden_claims": ["caused every late order"], "max_detail_rows": 10
+  },
+  {
+    "id": "supplier_receipt_signals",
+    "question": "Which suppliers have the largest pending quantities and late-risk purchase-order lines for receipts due by 2026-09-30, and what can this evidence establish about customer commitments?",
+    "smoke": false, "requires_code_interpreter": true, "expected_metrics": {},
+    "required_qualifiers": [["cannot", "not confirmed", "no direct", "association"]], "forbidden_claims": ["confirmed supplier cause"], "max_detail_rows": 10
+  },
+  {
+    "id": "material_shortage_signals",
+    "question": "Where are material reservation shortages concentrated by product and warehouse through 2026-09-30, and can they be attributed to individual sales-order lines?",
+    "smoke": false, "requires_code_interpreter": true, "expected_metrics": {},
+    "required_qualifiers": [["cannot", "not confirmed", "no bridge", "not attributed"]], "forbidden_claims": ["confirmed cause for each order"], "max_detail_rows": 10
+  },
+  {
+    "id": "quality_signals",
+    "question": "Summarize recent quality holds and severe nonconformances by product through 2026-09-15. Separate recorded quality causes from customer-commitment analysis and state explicitly that commitment causation is not confirmed.",
+    "smoke": false, "requires_code_interpreter": true, "expected_metrics": {},
+    "required_qualifiers": [["not confirmed", "inference", "cannot", "association"]], "forbidden_claims": ["quality caused all backlog"], "max_detail_rows": 10
+  },
+  {
+    "id": "operations_deterioration",
+    "question": "Using the available operations snapshots, which sites show the clearest deterioration in service, backlog, production, supplier, or quality indicators? State the history available.",
+    "smoke": false, "requires_code_interpreter": true, "expected_metrics": {},
+    "required_qualifiers": [["30", "one month", "month of history"]], "forbidden_claims": ["four-month operations trend"], "max_detail_rows": 10
+  },
+  {
+    "id": "pune_recovery_plan",
+    "question": "What is the lowest-cost recovery plan for Pune active commitments due in the next seven days? Compare supported options, affected commitments, benefit, cost evidence, assumptions, and approver.",
+    "smoke": false, "requires_code_interpreter": true, "expected_metrics": {},
+    "required_qualifiers": [["approval", "approver", "human"], "cost"], "forbidden_claims": ["action executed"], "max_detail_rows": 10
+  },
+  {
+    "id": "unsupported_supplier_cause",
+    "question": "Tell me exactly which supplier caused the highest-value Pune commitment due this week to be at risk.",
+    "smoke": false, "requires_code_interpreter": true, "expected_metrics": {},
+    "required_qualifiers": [["cannot", "not confirmed", "no direct", "insufficient"]], "forbidden_claims": ["confirmed supplier cause"], "max_detail_rows": 10
+  },
+  {
+    "id": "second_page_commitments",
+    "question": "Show records 11 through 20 of the highest-priority active commitments due in the next 14 days, using a deterministic ranking, and state the full matched population.",
+    "smoke": false, "requires_code_interpreter": true, "expected_metrics": {},
+    "required_qualifiers": ["11"], "forbidden_claims": ["all matching records shown"], "max_detail_rows": 10, "require_evaluation_json": true
+  },
+  {
+    "id": "prediction_availability",
+    "question": "Rank the top late-order risks using the Azure ML prediction output, including prediction timestamp and model version. If the prediction file is unavailable, state exactly what cannot be calculated and do not invent scores.",
+    "smoke": false, "requires_code_interpreter": false, "expected_metrics": {},
+    "required_qualifiers": ["cannot"], "forbidden_claims": ["predicted probability is"], "max_detail_rows": 10
+  }
+]

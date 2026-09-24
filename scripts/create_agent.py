@@ -51,6 +51,17 @@ def required_config(environ: Mapping[str, str]) -> dict[str, str]:
     }
 
 
+def prompt_agent_options(
+    model: str, instructions: str, tools: Sequence[Any]
+) -> dict[str, Any]:
+    return {
+        "model": model,
+        "instructions": instructions,
+        "tools": list(tools),
+        "temperature": 0,
+    }
+
+
 def load_state(path: Path) -> dict[str, Any] | None:
     if not path.is_file():
         return None
@@ -137,13 +148,15 @@ def deploy(*, replace: bool = False) -> None:
             return project.agents.create_version(
                 agent_name=config["agent_name"],
                 definition=PromptAgentDefinition(
-                    model=config["model_deployment"],
-                    instructions=instructions,
-                    tools=[
+                    **prompt_agent_options(
+                        config["model_deployment"],
+                        instructions,
+                        [
                         CodeInterpreterTool(
                             container=AutoCodeInterpreterToolParam(file_ids=file_ids)
                         )
-                    ],
+                        ],
+                    )
                 ),
                 description="Manufacturing control-tower demo agent",
             )

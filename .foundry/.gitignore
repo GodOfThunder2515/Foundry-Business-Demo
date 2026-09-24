@@ -1,2 +1,3 @@
 # Local deployment ownership metadata; contains IDs, never credentials.
 /manufacturing-agent-state.json
+/evaluation-results.json

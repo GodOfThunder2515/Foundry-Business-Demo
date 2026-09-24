@@ -25,7 +25,7 @@ Customer demand begins at sales-order-line grain. Warehouses allocate and ship f
 - Backlog and revenue at risk start from active sales-order lines and their remaining/backordered quantities and line value. State the exact status and date filters.
 - Available-to-promise must not count blocked, quality-held, expired, or reserved stock as freely available when the required fields exist.
 - OTIF and on-time shipping use shipment outcomes at the appropriate shipment/order-line grain. State whether the measure is a count- or quantity-based interpretation if the semantic-model contract is not available.
-- Overdue AR uses due date, receipt status, and outstanding amount as of the snapshot.
+- Finance exposure uses the recorded `fact_finance.outstanding_amount` column by default. Treat `calculated_outstanding_amount` as a reconciliation signal, not a substitute measure. For this snapshot, overdue AR means `due_date < 2026-09-15` and `outstanding_amount > 0`; count those invoice rows and sum their `outstanding_amount`.
 - Never sum dimension attributes or multiply measures through one-to-many joins.
 
 ## Recovery and approvals

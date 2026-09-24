@@ -6,6 +6,7 @@ from pathlib import Path
 from scripts.create_agent import (
     cleanup_recorded_resources,
     load_state,
+    prompt_agent_options,
     provision_resources,
     required_config,
     save_state,
@@ -71,6 +72,12 @@ class ConfigTests(unittest.TestCase):
                     "FOUNDRY_AGENT_NAME": "manufacturing-agent",
                 }
             )
+
+    def test_prompt_agent_uses_deterministic_temperature(self):
+        options = prompt_agent_options("gpt-4.1-mini", "instructions", ["tool"])
+
+        self.assertEqual(options["temperature"], 0)
+        self.assertEqual(options["model"], "gpt-4.1-mini")
 
 
 class StateTests(unittest.TestCase):
