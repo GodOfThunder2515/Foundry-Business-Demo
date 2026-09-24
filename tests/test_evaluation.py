@@ -10,7 +10,7 @@ from src.evaluation import (
     run_with_rate_limit_retry,
     select_cases,
 )
-from scripts.evaluate_agent import evaluation_prompt
+from scripts.evaluate_agent import evaluation_agent_reference, evaluation_prompt
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -111,6 +111,16 @@ class EvaluationPromptTests(unittest.TestCase):
         prompt = evaluation_prompt({"question": "Q", "expected_metrics": {}})
         self.assertIn("```evaluation_json", prompt)
         self.assertIn("never Python expressions", prompt)
+        self.assertIn('"detail_records": []', prompt)
+
+    def test_agent_reference_is_pinned_to_recorded_version(self):
+        reference = evaluation_agent_reference(
+            {"agent_name": "agent", "agent_version": "5"}
+        )
+        self.assertEqual(
+            reference,
+            {"name": "agent", "version": "5", "type": "agent_reference"},
+        )
 
 
 class BatchCasesTests(unittest.TestCase):
@@ -230,6 +240,17 @@ class EvaluateResponseTests(unittest.TestCase):
         )
         errors = evaluate_response(case, "Ten detailed rows.", True)
         self.assertIn("Missing evaluation_json block", errors)
+
+    def test_pagination_counts_machine_readable_detail_records(self):
+        case = self.case(
+            expected_metrics={}, required_qualifiers=[], require_evaluation_json=True
+        )
+        text = self.response(
+            detail_rows=10,
+            detail_records=[f"line-{index}" for index in range(9)],
+        )
+        errors = evaluate_response(case, text, True)
+        self.assertTrue(any("detail_records" in error for error in errors))
 
     def test_malformed_optional_block_does_not_crash_qualitative_case(self):
         case = self.case(expected_metrics={}, required_qualifiers=[])

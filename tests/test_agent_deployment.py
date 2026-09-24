@@ -5,6 +5,7 @@ from pathlib import Path
 
 from scripts.create_agent import (
     cleanup_recorded_resources,
+    finalize_deployment,
     load_state,
     prompt_agent_options,
     provision_resources,
@@ -14,8 +15,9 @@ from scripts.create_agent import (
 
 
 class FakeFiles:
-    def __init__(self, fail_on: int | None = None):
+    def __init__(self, fail_on: int | None = None, delete_failures=None):
         self.fail_on = fail_on
+        self.delete_failures = delete_failures or {}
         self.created: list[str] = []
         self.deleted: list[str] = []
 
@@ -28,24 +30,29 @@ class FakeFiles:
 
     def delete(self, file_id):
         self.deleted.append(file_id)
+        if file_id in self.delete_failures:
+            raise self.delete_failures[file_id]
 
 
 class FakeOpenAI:
-    def __init__(self, fail_on: int | None = None):
-        self.files = FakeFiles(fail_on)
+    def __init__(self, fail_on: int | None = None, delete_failures=None):
+        self.files = FakeFiles(fail_on, delete_failures)
 
 
 class FakeAgents:
-    def __init__(self):
+    def __init__(self, delete_failure=None):
         self.deleted: list[tuple[str, str]] = []
+        self.delete_failure = delete_failure
 
     def delete_version(self, *, agent_name, agent_version):
         self.deleted.append((agent_name, agent_version))
+        if self.delete_failure is not None:
+            raise self.delete_failure
 
 
 class FakeProject:
-    def __init__(self):
-        self.agents = FakeAgents()
+    def __init__(self, delete_failure=None):
+        self.agents = FakeAgents(delete_failure)
 
 
 class ConfigTests(unittest.TestCase):
@@ -155,6 +162,59 @@ class CleanupTests(unittest.TestCase):
 
         self.assertEqual(project.agents.deleted, [("manufacturing-agent", "3")])
         self.assertEqual(openai.files.deleted, ["file-a", "file-b"])
+
+    def test_cleanup_attempts_every_resource_and_reports_failures(self):
+        project = FakeProject(delete_failure=RuntimeError("agent failed"))
+        openai = FakeOpenAI(delete_failures={"file-a": RuntimeError("file failed")})
+        state = {
+            "agent_name": "manufacturing-agent",
+            "agent_version": "3",
+            "file_ids": ["file-a", "file-b"],
+        }
+
+        with self.assertRaisesRegex(RuntimeError, "agent failed.*file failed"):
+            cleanup_recorded_resources(project, openai, state)
+
+        self.assertEqual(openai.files.deleted, ["file-a", "file-b"])
+
+    def test_cleanup_tolerates_already_deleted_resources(self):
+        class NotFoundError(Exception):
+            status_code = 404
+
+        project = FakeProject(delete_failure=NotFoundError())
+        openai = FakeOpenAI(delete_failures={"file-a": NotFoundError()})
+        state = {
+            "agent_name": "manufacturing-agent",
+            "agent_version": "3",
+            "file_ids": ["file-a"],
+        }
+
+        cleanup_recorded_resources(project, openai, state)
+
+    def test_state_write_failure_rolls_back_new_resources(self):
+        project = FakeProject()
+        openai = FakeOpenAI()
+        new_state = {
+            "agent_name": "manufacturing-agent",
+            "agent_version": "4",
+            "file_ids": ["new-file"],
+        }
+
+        def fail_save(_path, _state):
+            raise OSError("state write failed")
+
+        with self.assertRaisesRegex(OSError, "state write failed"):
+            finalize_deployment(
+                project,
+                openai,
+                new_state,
+                previous=None,
+                state_path=Path("state.json"),
+                save=fail_save,
+            )
+
+        self.assertEqual(project.agents.deleted, [("manufacturing-agent", "4")])
+        self.assertEqual(openai.files.deleted, ["new-file"])
 
 
 if __name__ == "__main__":

@@ -30,7 +30,11 @@ RESULTS_PATH = ROOT / ".foundry/evaluation-results.json"
 def evaluation_prompt(case: dict) -> str:
     metric_names = list(case.get("expected_metrics", {}))
     template = json.dumps(
-        {"metrics": {name: 0 for name in metric_names}, "detail_rows": 0}
+        {
+            "metrics": {name: 0 for name in metric_names},
+            "detail_rows": 0,
+            "detail_records": [],
+        }
     )
     return (
         case["question"]
@@ -42,9 +46,18 @@ def evaluation_prompt(case: dict) -> str:
         + "; never Python expressions, variable names, or code. Do not round calculated "
         "metric values in evaluation_json; preserve the "
         "source precision. detail_rows is the number of detailed records shown in the answer. "
-        "Do not count aggregated or grouped rows as detail_rows. "
+        "detail_records must list the identifier of every detailed record shown. Do not count "
+        "aggregated or grouped rows as detail_rows. "
         "Do not put other text after that block."
     )
+
+
+def evaluation_agent_reference(state: dict) -> dict[str, str]:
+    return {
+        "name": state["agent_name"],
+        "version": state["agent_version"],
+        "type": "agent_reference",
+    }
 
 
 def main() -> int:
@@ -84,19 +97,20 @@ def main() -> int:
         for batch in batch_cases(cases):
             conversation = openai.conversations.create()
             for case in batch:
+                started = time.perf_counter()
+                response_id = None
+                tool_called = False
                 try:
                     response = run_with_rate_limit_retry(
                         lambda: openai.responses.create(
                             conversation=conversation.id,
                             input=evaluation_prompt(case),
                             extra_body={
-                                "agent_reference": {
-                                    "name": state["agent_name"],
-                                    "type": "agent_reference",
-                                }
+                                "agent_reference": evaluation_agent_reference(state)
                             },
                         )
                     )
+                    response_id = response.id
                     tool_called = any(
                         getattr(item, "type", None) == "code_interpreter_call"
                         for item in response.output
@@ -108,7 +122,21 @@ def main() -> int:
                 print(f"{status}: {case['id']}")
                 for error in errors:
                     print(f"  - {error}")
-                results.append({"id": case["id"], "status": status, "errors": errors})
+                results.append(
+                    {
+                        "id": case["id"],
+                        "status": status,
+                        "errors": errors,
+                        "agent_name": state["agent_name"],
+                        "agent_version": state["agent_version"],
+                        "model": config["model_deployment"],
+                        "snapshot_id": state.get("snapshot_id"),
+                        "conversation_id": conversation.id,
+                        "response_id": response_id,
+                        "code_interpreter_called": tool_called,
+                        "elapsed_seconds": round(time.perf_counter() - started, 3),
+                    }
+                )
                 if case is not cases[-1]:
                     time.sleep(5)
 

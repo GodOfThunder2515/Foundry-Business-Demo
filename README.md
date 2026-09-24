@@ -27,7 +27,7 @@ uv run python scripts/create_agent.py replace
 uv run python scripts/create_agent.py cleanup
 ```
 
-Use `deploy` for the first version. Use `replace` to create and validate a replacement before deleting the recorded prior version. Use `cleanup` only when the persistent demo agent is no longer needed.
+Use `deploy` for the first version. Use `replace` to create the replacement before cleaning the recorded prior version; failures roll back the new resources and preserve recoverable state. Use `cleanup` only when the persistent demo agent is no longer needed.
 
 After deployment, open Microsoft Foundry, go to **Build > Agents**, select `manufacturing-control-tower-agent`, and chat in the Playground. No separate chat application is required.
 
@@ -57,7 +57,7 @@ uv run python scripts/evaluate_agent.py --case active_commitments_due_14d
 uv run python scripts/evaluate_agent.py --all
 ```
 
-The evaluator requires Code Interpreter for dataset claims, compares independently reviewed numeric oracles, checks required limitations and prohibited claims, and verifies the 10-record pagination cap. Concise results are saved to the ignored `.foundry/evaluation-results.json` file.
+The evaluator requires Code Interpreter for dataset claims, compares independently reviewed numeric oracles, checks required limitations and prohibited claims, and verifies the 10-record pagination cap from machine-readable record identifiers. Numeric and pagination cases use isolated conversations; qualitative cases are batched in groups of at most five. Concise audit results are saved to the ignored `.foundry/evaluation-results.json` file.
 
 To validate Code Interpreter independently with the original disposable sales-order fixture:
 

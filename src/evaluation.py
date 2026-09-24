@@ -153,4 +153,10 @@ def evaluate_response(
             errors.append(
                 f"detail_rows must be an integer from 0 to {maximum}, got {detail_rows!r}"
             )
+        if case.get("require_evaluation_json"):
+            detail_records = payload.get("detail_records")
+            if not isinstance(detail_records, list) or len(detail_records) != detail_rows:
+                errors.append(
+                    "detail_records must list every displayed detailed record and match detail_rows"
+                )
     return errors

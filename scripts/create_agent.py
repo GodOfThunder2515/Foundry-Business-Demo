@@ -102,12 +102,44 @@ def provision_resources(
 def cleanup_recorded_resources(
     project: Any, openai: Any, state: Mapping[str, Any]
 ) -> None:
-    project.agents.delete_version(
-        agent_name=state["agent_name"],
-        agent_version=state["agent_version"],
-    )
+    failures: list[str] = []
+    try:
+        project.agents.delete_version(
+            agent_name=state["agent_name"],
+            agent_version=state["agent_version"],
+        )
+    except Exception as error:
+        if getattr(error, "status_code", None) != 404:
+            failures.append(str(error))
     for file_id in state["file_ids"]:
-        openai.files.delete(file_id)
+        try:
+            openai.files.delete(file_id)
+        except Exception as error:
+            if getattr(error, "status_code", None) != 404:
+                failures.append(str(error))
+    if failures:
+        raise RuntimeError("; ".join(failures))
+
+
+def finalize_deployment(
+    project: Any,
+    openai: Any,
+    new_state: Mapping[str, Any],
+    *,
+    previous: Mapping[str, Any] | None,
+    state_path: Path,
+    save: Callable[[Path, Mapping[str, Any]], None] = save_state,
+) -> None:
+    try:
+        if previous is not None:
+            cleanup_recorded_resources(project, openai, previous)
+        save(state_path, new_state)
+    except Exception as error:
+        try:
+            cleanup_recorded_resources(project, openai, new_state)
+        except Exception as rollback_error:
+            raise RuntimeError(f"{error}; rollback failed: {rollback_error}") from error
+        raise
 
 
 def _clients(config: Mapping[str, str]):
@@ -169,13 +201,13 @@ def deploy(*, replace: bool = False) -> None:
             "snapshot_id": "epic_soca_6rn73kkx4n",
             "created_at": datetime.now(UTC).isoformat(),
         }
-        save_state(STATE_PATH, state)
-
-        if previous is not None:
-            try:
-                cleanup_recorded_resources(project, openai, previous)
-            except Exception as error:
-                print(f"WARNING: previous deployment cleanup failed: {error}")
+        finalize_deployment(
+            project,
+            openai,
+            state,
+            previous=previous,
+            state_path=STATE_PATH,
+        )
 
     print(f"Agent deployed: {state['agent_name']} version {state['agent_version']}")
     print(f"Uploaded files: {len(state['file_ids'])}")

@@ -70,7 +70,7 @@
 
 **Files:** Create `evaluations/golden_questions.json`, `scripts/evaluate_agent.py`, `src/evaluation.py`, and `tests/test_evaluation.py`.
 
-**Interfaces:** Support `--case ID`, `--smoke`, and `--all`, reuse one conversation, and write concise local results without raw rows.
+**Interfaces:** Support `--case ID`, `--smoke`, and `--all`. After connected testing showed that one 18-turn conversation exceeded token-rate limits and carried tool context between numeric oracles, isolate numeric/pagination cases and batch qualitative cases in groups of at most five. Write concise local audit results without raw rows.
 
 - [ ] Write failing tests for case loading, selection, numeric matching, qualifier/prohibited-claim checks, detail caps, and missing-prediction expectations.
 - [ ] Run the focused tests and confirm expected failures.
