@@ -64,14 +64,14 @@ class ConfigTests(unittest.TestCase):
         config = required_config(
             {
                 "FOUNDRY_PROJECT_ENDPOINT": "https://example.test/project",
-                "FOUNDRY_MODEL_DEPLOYMENT": "gpt-4.1-mini",
+                "FOUNDRY_MODEL_DEPLOYMENT": "gpt-5-mini",
                 "FOUNDRY_AGENT_NAME": "manufacturing-agent",
             }
         )
         self.assertEqual(config["agent_name"], "manufacturing-agent")
 
     def test_rejects_a_different_model(self):
-        with self.assertRaisesRegex(ValueError, "gpt-4.1-mini"):
+        with self.assertRaisesRegex(ValueError, "gpt-5-mini"):
             required_config(
                 {
                     "FOUNDRY_PROJECT_ENDPOINT": "https://example.test/project",
@@ -80,11 +80,12 @@ class ConfigTests(unittest.TestCase):
                 }
             )
 
-    def test_prompt_agent_uses_deterministic_temperature(self):
-        options = prompt_agent_options("gpt-4.1-mini", "instructions", ["tool"])
+    def test_prompt_agent_uses_medium_reasoning_without_sampling_temperature(self):
+        options = prompt_agent_options("gpt-5-mini", "instructions", ["tool"])
 
-        self.assertEqual(options["temperature"], 0)
-        self.assertEqual(options["model"], "gpt-4.1-mini")
+        self.assertEqual(options["reasoning"], {"effort": "medium"})
+        self.assertNotIn("temperature", options)
+        self.assertEqual(options["model"], "gpt-5-mini")
 
 
 class StateTests(unittest.TestCase):

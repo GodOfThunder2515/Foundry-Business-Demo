@@ -28,7 +28,7 @@ CATALOG_PATH = ROOT / "knowledge/dataset_catalog.json"
 KNOWLEDGE_DIR = ROOT / "knowledge"
 INSTRUCTIONS_PATH = ROOT / "src/agent_instructions.md"
 STATE_PATH = ROOT / ".foundry/manufacturing-agent-state.json"
-APPROVED_MODEL = "gpt-4.1-mini"
+APPROVED_MODEL = "gpt-5-mini"
 
 
 def required_config(environ: Mapping[str, str]) -> dict[str, str]:
@@ -58,7 +58,7 @@ def prompt_agent_options(
         "model": model,
         "instructions": instructions,
         "tools": list(tools),
-        "temperature": 0,
+        "reasoning": {"effort": "medium"},
     }
 
 
@@ -199,6 +199,8 @@ def deploy(*, replace: bool = False) -> None:
             "agent_version": str(agent.version),
             "file_ids": file_ids,
             "snapshot_id": "epic_soca_6rn73kkx4n",
+            "model_deployment": config["model_deployment"],
+            "reasoning_effort": "medium",
             "created_at": datetime.now(UTC).isoformat(),
         }
         finalize_deployment(

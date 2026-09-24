@@ -13,7 +13,7 @@ uv sync --frozen
 
 ```dotenv
 FOUNDRY_PROJECT_ENDPOINT=https://<resource>.services.ai.azure.com/api/projects/<project>
-FOUNDRY_MODEL_DEPLOYMENT=gpt-4.1-mini
+FOUNDRY_MODEL_DEPLOYMENT=gpt-5-mini
 FOUNDRY_AGENT_NAME=manufacturing-control-tower-agent
 ```
 
