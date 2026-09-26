@@ -3,7 +3,14 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.agent_assets import collect_upload_paths, compose_instructions
+from src.agent_assets import (
+    CODE_INTERPRETER_FILE_LIMIT,
+    EXPECTED_UPLOAD_COUNT,
+    RISK_TABLE_FILENAMES,
+    collect_upload_paths,
+    compose_instructions,
+)
+from src.analysis_helper import NOT_UPLOADED
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,11 +42,23 @@ class ComposeInstructionsTests(unittest.TestCase):
             self.assertLess(result.index("BUSINESS_TOKEN"), result.index("TABLE_TOKEN"))
             self.assertLess(result.index("TABLE_TOKEN"), result.index("EXAMPLE_TOKEN"))
 
-    def test_rejects_table_context_over_12000_characters(self):
+    def test_answer_checklist_is_the_final_section(self):
         with tempfile.TemporaryDirectory() as directory:
-            knowledge, instructions = self.make_assets(Path(directory), "x" * 12001)
+            root = Path(directory)
+            knowledge, instructions = self.make_assets(root)
+            checklist = root / "answer_checklist.md"
+            checklist.write_text("CHECKLIST_TOKEN", encoding="utf-8")
 
-            with self.assertRaisesRegex(ValueError, "12,000"):
+            result = compose_instructions(knowledge, instructions, checklist)
+
+            self.assertTrue(result.endswith("# Before you send\n\nCHECKLIST_TOKEN"))
+            self.assertLess(result.index("EXAMPLE_TOKEN"), result.index("CHECKLIST_TOKEN"))
+
+    def test_rejects_table_context_over_18000_characters(self):
+        with tempfile.TemporaryDirectory() as directory:
+            knowledge, instructions = self.make_assets(Path(directory), "x" * 18001)
+
+            with self.assertRaisesRegex(ValueError, "18,000"):
                 compose_instructions(knowledge, instructions)
 
     def test_missing_instruction_asset_fails_clearly(self):
@@ -100,9 +119,30 @@ class CollectUploadsTests(unittest.TestCase):
 
             paths, warnings = collect_upload_paths(gold, helper, catalog, risk_tables)
 
-            self.assertEqual(len(paths), 22)
+            self.assertEqual(len(paths), 19)
             self.assertEqual([path.name for path in paths[-4:]], list(names))
             self.assertEqual(warnings, [])
+
+    def test_unused_tables_are_not_uploaded_and_upload_stays_within_file_limit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            gold, helper, catalog = self.create_required_files(root)
+            risk_tables = root / "risk_tables"
+            risk_tables.mkdir()
+            for name in RISK_TABLE_FILENAMES:
+                (risk_tables / name).touch()
+
+            paths, _warnings = collect_upload_paths(gold, helper, catalog, risk_tables)
+
+            names = {path.name for path in paths}
+            self.assertFalse(names & {"dim_date.csv", "dim_region.csv", "fact_inventory_transactions.csv"})
+            self.assertLessEqual(len(paths), CODE_INTERPRETER_FILE_LIMIT)
+
+    def test_instructions_expect_exactly_the_uploaded_file_count(self):
+        instructions = (ROOT / "src/agent_instructions.md").read_text(encoding="utf-8")
+
+        self.assertIn(f"EXPECTED_FILES = {EXPECTED_UPLOAD_COUNT}", instructions)
+        self.assertEqual(EXPECTED_UPLOAD_COUNT, 16 - len(NOT_UPLOADED) + 2 + len(RISK_TABLE_FILENAMES))
 
     def test_missing_helper_or_catalog_fails_before_upload(self):
         with tempfile.TemporaryDirectory() as directory:

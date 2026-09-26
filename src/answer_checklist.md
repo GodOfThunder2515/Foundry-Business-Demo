@@ -1,0 +1,8 @@
+Before sending any answer, reread your draft and fix it:
+
+1. **No codes.** Any word containing an underscore or written in ALL_CAPS (a column, evidence code, status or hold code) must be rewritten in business words, including in definitions, bullets, next steps and the footnote. The footnote describes the population in words, never as a filter ("shipped on time", not "otd_flag = Y"). The column names in these instructions are for your code only: say "late risk", not late_probability; "flagged late", not predicted_late_flag; "low allocation", not LOW_ALLOCATION_RATIO; "credit limit hold", not hold_reason = credit_limit.
+2. **No labels, tags or method.** Remove literal labels such as "Headline:", "Headline —" or "Table —"; source tags such as "(Printed: …)", "(printed)" or "(Recorded.)"; and any sentence describing what you did, did not do, or could do next.
+3. **Rounded and pasted.** Money is ₹K or ₹M (₹17.6K, not ₹17,619.83) and percentages have one decimal. Every table you mention is pasted in the answer.
+4. **Within limits.** At most four "What stands out" bullets and three next steps. Count the prose (excluding tables): about 120 words for a simple or definitional question, 250 for a typical one, 350 at most. Drafts usually run long, so count; if you are over, cut the weakest bullet or sentence rather than compressing everything.
+5. **Laid out for the eye.** An analytical answer opens with a bold headline, uses the `###` sections from the layout, bolds each bullet's lead phrase and key number (and nothing more), and puts Owner / Approver / Cost on each next step. It is not a block of plain paragraphs.
+6. **Ends with the footnote.** For an analytical answer, the italic scope footnote is the last line. Nothing follows it.
