@@ -1,10 +1,10 @@
 # Manufacturing Control Tower Foundry Agent
 
-This repository deploys a Microsoft Foundry prompt agent that uses Code Interpreter to analyze the synthetic manufacturing Gold snapshot. The data as-of date is fixed at `2026-09-15`; answers are analytical demo outputs, not live operational data.
+This repository deploys a Microsoft Foundry prompt agent (gpt-5-mini, reasoning effort medium, low verbosity) that uses Code Interpreter to analyze a synthetic manufacturing Gold snapshot and a late-order risk package. The data as-of date is fixed at `2026-09-15`. Answers are analytical demo outputs, not live operational data.
 
 ## Setup
 
-Authenticate with the company Azure account, restore the locked environment, and configure these values in the uncommitted `.env` file:
+Authenticate with the company Azure account and configure the uncommitted `.env` file:
 
 ```powershell
 az login
@@ -17,52 +17,134 @@ FOUNDRY_MODEL_DEPLOYMENT=gpt-5-mini
 FOUNDRY_AGENT_NAME=manufacturing-control-tower-agent
 ```
 
-The deployment expects the 16 CSV files under `data/gold_snapshots/epic_soca_6rn73kkx4n/named-outputs/snapshot/csv/` and four required late-order-risk CSVs under `data/bi_tables/`. The risk package contains line-level replay scores, ranked model factors, operational evidence, and model metrics. Parquet duplicates are not uploaded.
+`uv run` can hang when antivirus blocks the uv cache. If it does, call `.venv\Scripts\python.exe` directly in the commands below.
+
+The agent receives **19 files**:
+
+- 13 Gold CSVs from `data/gold_snapshots/epic_soca_6rn73kkx4n/named-outputs/snapshot/csv/`. `dim_date`, `dim_region` and `fact_inventory_transactions` are deliberately not uploaded; see `NOT_UPLOADED` in `src/analysis_helper.py`.
+- The 4 late-order-risk CSVs in `data/bi_tables/`.
+- `src/analysis_helper.py`.
+- `knowledge/dataset_catalog.json`.
+
+Parquet duplicates are not uploaded, because Code Interpreter does not accept them.
+
+## How the prompt is built
+
+`src/agent_assets.compose_instructions` joins these files, in this order, into the agent's instructions:
+
+1. `src/agent_instructions.md`: role, grounding, sandbox setup and answer style.
+2. `knowledge/business_context.md`: business concepts, time windows, populations and approvers.
+3. `knowledge/table_context.md`: the schema of every uploaded table, plus how to read the catalog.
+4. `knowledge/analysis_examples.md`: analysis playbooks.
+5. `src/answer_checklist.md`: the "Before you send" self-check, placed last on purpose.
 
 ## Deploy and use the Playground
 
 ```powershell
-uv run python scripts/create_agent.py deploy
-uv run python scripts/create_agent.py replace
-uv run python scripts/create_agent.py cleanup
+uv run python scripts/create_agent.py deploy    # first version: uploads all 19 files
+uv run python scripts/create_agent.py update    # new version from the current prompt; reuses data files
+uv run python scripts/create_agent.py replace   # new version with every file re-uploaded
+uv run python scripts/create_agent.py cleanup   # delete recorded versions and files
 ```
 
-Use `deploy` for the first version. Use `replace` to create the replacement before cleaning the recorded prior version; failures roll back the new resources and preserve recoverable state. Use `cleanup` only when the persistent demo agent is no longer needed.
+**Which command to use:**
 
-After deployment, open Microsoft Foundry, go to **Build > Agents**, select `manufacturing-control-tower-agent`, and chat in the Playground. No separate chat application is required.
+- `update` is the normal command after a prompt change. It uploads only the helper and the catalog, and keeps the previous version for rollback.
+- `replace` rebuilds everything, for use after a data change.
+- `cleanup` removes the current and retained versions and their files.
 
-Suggested demo sequence:
+State (agent name, version, file IDs, never secrets) is written to `.foundry/manufacturing-agent-state.json`.
 
-1. Which active customer commitments are due in the next 14 days?
-2. What operational signals explain the highest-risk commitments?
-3. What recovery alternatives are available, including cost limitations and required approvers?
-4. Show no more than 10 affected order lines.
-5. Show the next 10 records using the same ranking.
+In Microsoft Foundry, go to **Build > Agents**, select `manufacturing-control-tower-agent`, and chat in the Playground. Recommendations remain proposals and require human approval.
 
-The agent analyzes complete matching populations in Python while limiting model-visible output to 15 grouped rows, 10 detailed rows, and 12 columns. Recommendations remain proposals and require human approval.
+### Golden demo questions
+
+These questions were chosen from 15 candidates (`evaluations/demo_candidates.json`), each run twice, for correctness, insight, stability and latency. Ask them in two chats, in this order. Send one warm-up question in each chat before presenting, so the one-time data load (about 20 s) happens off-screen.
+
+| Chat | # | Question | Tier |
+|---|---|---|---|
+| 1: risk story | 1 | How exposed are we over the next two weeks, and where is the risk concentrated? | deep |
+| | 2 | Which Pune orders should my planners chase first, and why? | deep |
+| | 3 | What's the cheapest way to rescue the Pune orders due in the next seven days, and who needs to sign off? | deep |
+| | 4 | Is paying for express freight actually worth it for our late orders? | deep |
+| | 5 | Release the credit hold and book express freight for the top five Pune orders. | quick |
+| 2: customers and trust | 6 | Which of our strategic customers have orders at risk of running late this week, and who should I call first? | quick |
+| | 7 | How much revenue is stuck behind credit or customer holds right now? | quick |
+| | 8 | Are any of those customers also behind on paying us? | quick |
+| | 9 | Are quality holds really what's stopping us from shipping? | deep |
+| | 10 | Can I trust the late-order predictions, and where should my planners double-check? | quick |
+
+On gpt-5-mini, quick answers take about 25–60 s and deep answers 45–100 s.
+
+**Frozen at agent version 27** (2026-09-25; the last two runs passed 8/10). Presenter notes:
+
+- **Numbers that stay the same across runs:**
+  - 1,406 lines and ₹4.84M at risk over two weeks;
+  - Pune has 126 of 156 lines flagged;
+  - holds total ₹4.10M, and 114 of those customers have ₹763.5K overdue;
+  - express freight is no more on time than standard;
+  - model precision 68.5% and recall 74.3%.
+- **Questions 3 and 9 can vary in scope.** The Pune plan may size itself by backorder need rather than the **₹157.8K at risk**, and the quality answer may use the whole June–September order book rather than the next 14 days. The conclusions stay the same (local stock first, express not needed; quality is a real but minor blocker). If asked, anchor on the at-risk figure from question 1.
+- **If an answer errors** (a rare `invalid_prompt`), re-send it. If an answer is poor, ask it again. If a new version misbehaves, point the Playground back to version 27.
+
+- **Alternates:** on-time shipping trend, "What's going wrong at our Pune plant?" and supplier delays.
+- **Other checks:** `evaluations/demo_questions.json` also holds variant and metadata questions, which check that the agent generalizes beyond this list.
+
+**Demo tips:**
+
+- Warm the agent up with a question or two before presenting.
+- A rare `invalid_prompt` error has been seen on the recovery-plan question. Re-sending the question resolves it.
 
 ## Validate
 
-Run the local contract tests without Azure access:
+Offline contract tests (no Azure access needed):
 
 ```powershell
-uv run python -m unittest discover -s tests -v
+uv run python -m unittest discover -s tests
 ```
 
-Run the connected golden evaluation against the recorded persistent deployment:
+### Demo evaluation (connected; costs tokens and Code Interpreter sessions)
 
 ```powershell
-uv run python scripts/evaluate_agent.py --smoke
-uv run python scripts/evaluate_agent.py --case active_commitments_due_14d
-uv run python scripts/evaluate_agent.py --all
+uv run python scripts/evaluate_demo.py --all
+uv run python scripts/evaluate_demo.py --question risk_overview
+uv run python scripts/evaluate_demo.py --group B
 ```
 
-The evaluator requires Code Interpreter for dataset claims, compares independently reviewed numeric oracles, checks required limitations and prohibited claims, and verifies the 10-record pagination cap from machine-readable record identifiers. Numeric and pagination cases use isolated conversations; qualitative cases are batched in groups of at most five. Concise audit results are saved to the ignored `.foundry/evaluation-results.json` file.
+Each conversation group runs in its own conversation, one group at a time. For every answer the evaluator checks:
 
-To validate Code Interpreter independently with the original disposable sales-order fixture:
+- required values and qualifiers from independently computed oracles (`scripts/compute_demo_oracles.py`);
+- that record IDs exist in `fact_sales`;
+- word limits;
+- style: no column names, codes, method narration or closing offers;
+- that the sandbox loaded all files.
+
+It saves answers, traces, `run.json` and `report.md` under the ignored `.foundry/demo-evaluation/<run-id>/`.
+
+### Trace one question
 
 ```powershell
-uv run python scripts/validate_code_interpreter.py
+uv run python scripts/trace_query.py "Which Pune orders due this week are most at risk?"
+uv run python scripts/trace_query.py "Show the next 10." --conversation <conversation-id>
 ```
 
-The disposable validation deletes its uploaded file and temporary agent version in a `finally` block. The persistent manufacturing agent and its recorded files are unaffected.
+This prints the code, sandbox output and final answer, and saves the raw trace to `.foundry/traces/`.
+
+The older numeric evaluation (`scripts/evaluate_agent.py` with `evaluations/golden_questions.json`) and `scripts/validate_code_interpreter.py` still work, but the demo evaluation is the primary check.
+
+## Trying another model
+
+`create_agent.py` accepts `gpt-5-mini` (the default) or `gpt-6-luna`, plus these optional overrides:
+
+- `FOUNDRY_REASONING_EFFORT`: `low`, `medium`, `high`, `xhigh` or `max`. The default is `medium`, and `max` works only on GPT-6.
+- `FOUNDRY_STATE_FILE`: gives a trial agent its own state file.
+
+Set the overrides in the shell, so `.env` and the live agent are untouched:
+
+```powershell
+$env:FOUNDRY_MODEL_DEPLOYMENT="gpt-6-luna"; $env:FOUNDRY_AGENT_NAME="manufacturing-control-tower-agent-luna"
+$env:FOUNDRY_STATE_FILE=".foundry/luna-agent-state.json"; $env:FOUNDRY_REASONING_EFFORT="high"
+uv run python scripts/create_agent.py deploy
+```
+
+The model deployment must exist first. As of 2026-09-25, `gpt-6-luna` has no quota in this subscription, and Microsoft does not yet document Code Interpreter support for GPT-6 models in the Agent Service.
