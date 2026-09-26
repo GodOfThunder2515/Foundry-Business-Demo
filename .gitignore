@@ -8,3 +8,22 @@ wheels/
 
 # Virtual environments
 .venv
+
+
+# APM dependencies
+apm_modules/
+
+.env
+
+.agents
+.claude
+.codex
+.foundry
+.superpowers
+.mcp.json
+apm.lock.yaml
+apm.yml
+
+foundry_file_manifest.json
+
+skills-lock.json

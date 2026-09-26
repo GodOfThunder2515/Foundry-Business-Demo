@@ -1,0 +1,1614 @@
+{
+  "format": "parquet",
+  "generated_at_utc": "2026-09-23T06:41:13.728243+00:00",
+  "manifest_version": 1,
+  "source": {
+    "fabric_workspace_id": "6004e227-cc9d-46e1-b05a-9a0cce581d05",
+    "lakehouse_id": "7f3e8c81-5dc8-4764-a5f8-fbca7c994ea8",
+    "schema_name": "Gold"
+  },
+  "status": "complete",
+  "table_count": 16,
+  "tables": [
+    {
+      "column_count": 14,
+      "columns": [
+        {
+          "data_type": "int32",
+          "name": "customer_key",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "customer_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "customer_code",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "customer_name",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "customer_type",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "industry",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "city",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "state",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "country",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "service_level",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "payment_terms_days",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "credit_limit",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "account_status",
+          "nullable": true
+        },
+        {
+          "data_type": "date32[day]",
+          "name": "created_date",
+          "nullable": true
+        }
+      ],
+      "delta_version": 1,
+      "parquet_bytes": 1756647,
+      "parquet_file": "tables/dim_customer.parquet",
+      "partition_columns": [],
+      "row_count": 60000,
+      "schema_name": "Gold",
+      "sha256": "cbf3626dcc2c9fecd237fec4371a53abd1fd46de5e070f1655e8e67ee2733ff7",
+      "table_name": "dim_customer"
+    },
+    {
+      "column_count": 16,
+      "columns": [
+        {
+          "data_type": "int32",
+          "name": "date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "date32[day]",
+          "name": "date",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "day",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "day_name",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "day_of_week",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "week_of_year",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "month",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "month_name",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "month_year",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "quarter",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "quarter_name",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "year",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "financial_month",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "financial_quarter",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "financial_year",
+          "nullable": true
+        },
+        {
+          "data_type": "bool",
+          "name": "is_weekend",
+          "nullable": true
+        }
+      ],
+      "delta_version": 2,
+      "parquet_bytes": 16610,
+      "parquet_file": "tables/dim_date.parquet",
+      "partition_columns": [],
+      "row_count": 989,
+      "schema_name": "Gold",
+      "sha256": "725eb9641de6908f23216ad9d6364ab296b3259f1ade0bee24b5e603a0314272",
+      "table_name": "dim_date"
+    },
+    {
+      "column_count": 16,
+      "columns": [
+        {
+          "data_type": "int32",
+          "name": "product_key",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "product_id",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "lead_time_days",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "standard_cost",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "sku",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "safety_stock_units",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "list_price",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "product_name",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "reorder_point_units",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "product_type",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "lot_size_units",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "product_family",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "uom",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "make_buy_flag",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "active_flag",
+          "nullable": true
+        },
+        {
+          "data_type": "timestamp[us, tz=UTC]",
+          "name": "load_timestamp",
+          "nullable": true
+        }
+      ],
+      "delta_version": 1,
+      "parquet_bytes": 158578,
+      "parquet_file": "tables/dim_product.parquet",
+      "partition_columns": [],
+      "row_count": 3200,
+      "schema_name": "Gold",
+      "sha256": "8ee4da7192ec46d884a31d043f7919fb1730219d0975b17e4b9251a90bbad76c",
+      "table_name": "dim_product"
+    },
+    {
+      "column_count": 2,
+      "columns": [
+        {
+          "data_type": "int32",
+          "name": "region_key",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "region",
+          "nullable": true
+        }
+      ],
+      "delta_version": 1,
+      "parquet_bytes": 777,
+      "parquet_file": "tables/dim_region.parquet",
+      "partition_columns": [],
+      "row_count": 5,
+      "schema_name": "Gold",
+      "sha256": "469c24c7d964c5304d16cdd2a4f736cd719c8d77d0a4f73abef232e58c7436fa",
+      "table_name": "dim_region"
+    },
+    {
+      "column_count": 13,
+      "columns": [
+        {
+          "data_type": "int32",
+          "name": "supplier_key",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "supplier_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "supplier_code",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "supplier_name",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "supplier_type",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "city",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "state",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "country",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "payment_terms_days",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "on_time_baseline_pct",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "quality_baseline_pct",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "risk_tier",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "active_flag",
+          "nullable": true
+        }
+      ],
+      "delta_version": 0,
+      "parquet_bytes": 127805,
+      "parquet_file": "tables/dim_supplier.parquet",
+      "partition_columns": [],
+      "row_count": 3500,
+      "schema_name": "Gold",
+      "sha256": "d78ae3626af571f457f0452e9a9f7736e381977d00afc3517e5629af7916d151",
+      "table_name": "dim_supplier"
+    },
+    {
+      "column_count": 10,
+      "columns": [
+        {
+          "data_type": "int32",
+          "name": "warehouse_key",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "warehouse_id",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "storage_capacity_cbm",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "site_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "warehouse_code",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "warehouse_name",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "warehouse_type",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "temperature_controlled_flag",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "active_flag",
+          "nullable": true
+        },
+        {
+          "data_type": "timestamp[us, tz=UTC]",
+          "name": "load_timestamp",
+          "nullable": true
+        }
+      ],
+      "delta_version": 3,
+      "parquet_bytes": 3743,
+      "parquet_file": "tables/dim_warehouse.parquet",
+      "partition_columns": [],
+      "row_count": 16,
+      "schema_name": "Gold",
+      "sha256": "b037e93516c8caf3ec12f28c51ffb53786745ef0dd690c85027dc5dcfc219b02",
+      "table_name": "dim_warehouse"
+    },
+    {
+      "column_count": 28,
+      "columns": [
+        {
+          "data_type": "string",
+          "name": "invoice_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "invoice_number",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "sales_order_id",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "customer_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "invoice_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "due_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "receipt_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "invoice_status",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "subtotal",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "tax_amount",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "freight_amount",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "invoice_total",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "outstanding_amount",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "invoice_line_count",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "total_invoiced_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(28, 4)",
+          "name": "total_discount_amount",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(28, 4)",
+          "name": "line_tax_amount",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(28, 4)",
+          "name": "line_total_amount",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "cash_receipt_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "payment_channel",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "bank_reference_hash",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "receipt_status",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "receipt_amount",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(19, 4)",
+          "name": "calculated_outstanding_amount",
+          "nullable": true
+        },
+        {
+          "data_type": "date32[day]",
+          "name": "invoice_date",
+          "nullable": true
+        },
+        {
+          "data_type": "date32[day]",
+          "name": "due_date",
+          "nullable": true
+        },
+        {
+          "data_type": "date32[day]",
+          "name": "receipt_date",
+          "nullable": true
+        },
+        {
+          "data_type": "timestamp[us, tz=UTC]",
+          "name": "invoice_load_timestamp",
+          "nullable": true
+        }
+      ],
+      "delta_version": 0,
+      "parquet_bytes": 13595740,
+      "parquet_file": "tables/fact_finance.parquet",
+      "partition_columns": [],
+      "row_count": 123405,
+      "schema_name": "Gold",
+      "sha256": "268f519edac3d79ce07777aaf1cccc027ad8050cd24f53703f74d38c04fa3059",
+      "table_name": "fact_finance"
+    },
+    {
+      "column_count": 15,
+      "columns": [
+        {
+          "data_type": "string",
+          "name": "lot_id",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "product_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "warehouse_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "supplier_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "manufacture_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "expiry_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "quality_status",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "on_hand_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "available_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "blocked_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "unit_cost",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(37, 8)",
+          "name": "inventory_value",
+          "nullable": true
+        },
+        {
+          "data_type": "date32[day]",
+          "name": "manufacture_date",
+          "nullable": true
+        },
+        {
+          "data_type": "date32[day]",
+          "name": "expiry_date",
+          "nullable": true
+        },
+        {
+          "data_type": "timestamp[us, tz=UTC]",
+          "name": "load_timestamp",
+          "nullable": true
+        }
+      ],
+      "delta_version": 0,
+      "parquet_bytes": 8368993,
+      "parquet_file": "tables/fact_inventory_lots.parquet",
+      "partition_columns": [],
+      "row_count": 250000,
+      "schema_name": "Gold",
+      "sha256": "b2b77dc96ba40a78a8974dc4f07d8ca85b696d31d595b7a3bbdad602594c582f",
+      "table_name": "fact_inventory_lots"
+    },
+    {
+      "column_count": 17,
+      "columns": [
+        {
+          "data_type": "string",
+          "name": "inventory_transaction_id",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "product_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "warehouse_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "transaction_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "lot_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "reference_type",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "reference_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "transaction_type",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "inventory_status",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "reason_code",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "quantity_in",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "quantity_out",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(19, 4)",
+          "name": "net_quantity",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "unit_cost",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(38, 8)",
+          "name": "inventory_value",
+          "nullable": true
+        },
+        {
+          "data_type": "timestamp[us, tz=UTC]",
+          "name": "transaction_timestamp",
+          "nullable": true
+        },
+        {
+          "data_type": "timestamp[us, tz=UTC]",
+          "name": "load_timestamp",
+          "nullable": true
+        }
+      ],
+      "delta_version": 0,
+      "parquet_bytes": 8124921,
+      "parquet_file": "tables/fact_inventory_transactions.parquet",
+      "partition_columns": [],
+      "row_count": 190000,
+      "schema_name": "Gold",
+      "sha256": "8ba1420667da5c6e211659ac46764127a61162c7dfe67ab595e3a6bf09c8a98b",
+      "table_name": "fact_inventory_transactions"
+    },
+    {
+      "column_count": 13,
+      "columns": [
+        {
+          "data_type": "string",
+          "name": "reservation_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "production_order_id",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "product_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "warehouse_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "required_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "reservation_status",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "required_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "reserved_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "issued_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "short_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(38, 20)",
+          "name": "reservation_fill_pct",
+          "nullable": true
+        },
+        {
+          "data_type": "date32[day]",
+          "name": "required_date",
+          "nullable": true
+        },
+        {
+          "data_type": "timestamp[us, tz=UTC]",
+          "name": "load_timestamp",
+          "nullable": true
+        }
+      ],
+      "delta_version": 0,
+      "parquet_bytes": 23226444,
+      "parquet_file": "tables/fact_material_reservations.parquet",
+      "partition_columns": [],
+      "row_count": 607100,
+      "schema_name": "Gold",
+      "sha256": "645e0f2bc339fd46da0af8ce3544314b7a06971b6cebbf26a6a9398ba23698fa",
+      "table_name": "fact_material_reservations"
+    },
+    {
+      "column_count": 21,
+      "columns": [
+        {
+          "data_type": "string",
+          "name": "site_id",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "warehouse_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "snapshot_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "open_sales_orders",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "orders_due_7d",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "backorder_lines",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "production_plan_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "production_completed_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "supplier_late_po_count",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "quality_hold_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "sales_order_value_open",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "inventory_value",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "inventory_accuracy_pct",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "production_attainment_pct",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "scrap_rate_pct",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "on_time_ship_pct",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "otif_pct",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "ar_overdue_amount",
+          "nullable": true
+        },
+        {
+          "data_type": "date32[day]",
+          "name": "snapshot_date",
+          "nullable": true
+        },
+        {
+          "data_type": "timestamp[us, tz=UTC]",
+          "name": "data_refresh_timestamp",
+          "nullable": true
+        },
+        {
+          "data_type": "timestamp[us, tz=UTC]",
+          "name": "load_timestamp",
+          "nullable": true
+        }
+      ],
+      "delta_version": 0,
+      "parquet_bytes": 28294,
+      "parquet_file": "tables/fact_operations_snapshot.parquet",
+      "partition_columns": [],
+      "row_count": 240,
+      "schema_name": "Gold",
+      "sha256": "9d892c2befea491e138f7fcb42501fc6433577887a7262b064b906d58dcaf8b8",
+      "table_name": "fact_operations_snapshot"
+    },
+    {
+      "column_count": 28,
+      "columns": [
+        {
+          "data_type": "string",
+          "name": "purchase_order_line_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "purchase_order_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "po_number",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "supplier_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "product_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "warehouse_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "order_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "expected_receipt_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "promised_receipt_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "actual_receipt_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "po_status",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "currency",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "buyer_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "late_risk_flag",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "line_number",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "line_status",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "ordered_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "received_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "accepted_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "rejected_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "quality_hold_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "pending_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "unit_cost",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "line_value",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(38, 4)",
+          "name": "accepted_value",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(38, 4)",
+          "name": "rejected_value",
+          "nullable": true
+        },
+        {
+          "data_type": "double",
+          "name": "receipt_pct",
+          "nullable": true
+        },
+        {
+          "data_type": "timestamp[us, tz=UTC]",
+          "name": "load_timestamp",
+          "nullable": true
+        }
+      ],
+      "delta_version": 0,
+      "parquet_bytes": 6947226,
+      "parquet_file": "tables/fact_procurement.parquet",
+      "partition_columns": [],
+      "row_count": 131746,
+      "schema_name": "Gold",
+      "sha256": "fb85cf7bc94b5fff1c9fba32f9c175a3727c680f9e4c45d47fa9108c122928d4",
+      "table_name": "fact_procurement"
+    },
+    {
+      "column_count": 17,
+      "columns": [
+        {
+          "data_type": "string",
+          "name": "inspection_id",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "product_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "inspection_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "inspection_type",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "reference_type",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "reference_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "inspector_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "product_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "lot_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "inspection_result",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "hold_flag",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "sample_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "passed_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "failed_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "defect_rate_pct",
+          "nullable": true
+        },
+        {
+          "data_type": "date32[day]",
+          "name": "inspection_date",
+          "nullable": true
+        },
+        {
+          "data_type": "timestamp[us, tz=UTC]",
+          "name": "load_timestamp",
+          "nullable": true
+        }
+      ],
+      "delta_version": 0,
+      "parquet_bytes": 2609103,
+      "parquet_file": "tables/fact_quality_inspections.parquet",
+      "partition_columns": [],
+      "row_count": 87493,
+      "schema_name": "Gold",
+      "sha256": "2b8b01800f07c4e1b7eca41c7f4249c5874de4f1b678ecaca433f812bd52f92b",
+      "table_name": "fact_quality_inspections"
+    },
+    {
+      "column_count": 18,
+      "columns": [
+        {
+          "data_type": "string",
+          "name": "nc_id",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "product_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "opened_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "closure_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "nc_number",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "reference_type",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "reference_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "product_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "lot_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "nc_category",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "severity",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "root_cause_category",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "disposition",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "quantity_affected",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "cost_of_quality",
+          "nullable": true
+        },
+        {
+          "data_type": "date32[day]",
+          "name": "opened_date",
+          "nullable": true
+        },
+        {
+          "data_type": "date32[day]",
+          "name": "closure_date",
+          "nullable": true
+        },
+        {
+          "data_type": "timestamp[us, tz=UTC]",
+          "name": "load_timestamp",
+          "nullable": true
+        }
+      ],
+      "delta_version": 0,
+      "parquet_bytes": 314257,
+      "parquet_file": "tables/fact_quality_nonconformances.parquet",
+      "partition_columns": [],
+      "row_count": 6528,
+      "schema_name": "Gold",
+      "sha256": "2e74f8a83bef1c3d471007177ad9946c9935c567373f445904cba578200e5d7e",
+      "table_name": "fact_quality_nonconformances"
+    },
+    {
+      "column_count": 27,
+      "columns": [
+        {
+          "data_type": "string",
+          "name": "sales_order_line_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "sales_order_id",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "customer_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "product_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "warehouse_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "order_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "requested_ship_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "promised_ship_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "requested_delivery_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "order_number",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "line_number",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "currency",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "channel",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "priority",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "order_status",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "line_status",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "hold_reason",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "ordered_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "allocated_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "shipped_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "backordered_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "unit_price",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "discount_pct",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "tax_pct",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(18, 4)",
+          "name": "line_value",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "backorder_flag",
+          "nullable": true
+        },
+        {
+          "data_type": "timestamp[us, tz=UTC]",
+          "name": "load_timestamp",
+          "nullable": true
+        }
+      ],
+      "delta_version": 0,
+      "parquet_bytes": 13730653,
+      "parquet_file": "tables/fact_sales.parquet",
+      "partition_columns": [],
+      "row_count": 367715,
+      "schema_name": "Gold",
+      "sha256": "f10e99d329d3901bd01bda40496f024ee9974c0bc5915a5c310c8713aa8ad796",
+      "table_name": "fact_sales"
+    },
+    {
+      "column_count": 23,
+      "columns": [
+        {
+          "data_type": "string",
+          "name": "shipment_line_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "shipment_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "sales_order_line_id",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "sales_order_id",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "product_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "warehouse_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "customer_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "actual_ship_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "planned_ship_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "planned_delivery_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "int32",
+          "name": "actual_delivery_date_key",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "shipment_number",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "carrier",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "service_level",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "shipment_status",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "otd_flag",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "exception_code",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "line_status",
+          "nullable": true
+        },
+        {
+          "data_type": "string",
+          "name": "lot_id",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "shipped_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "int64",
+          "name": "short_ship_qty",
+          "nullable": true
+        },
+        {
+          "data_type": "decimal128(38, 6)",
+          "name": "allocated_freight_cost",
+          "nullable": true
+        },
+        {
+          "data_type": "timestamp[us, tz=UTC]",
+          "name": "load_timestamp",
+          "nullable": true
+        }
+      ],
+      "delta_version": 2,
+      "parquet_bytes": 14295282,
+      "parquet_file": "tables/fact_shipments.parquet",
+      "partition_columns": [],
+      "row_count": 283415,
+      "schema_name": "Gold",
+      "sha256": "69d052adcc44b4fb720880d49daaf9dd9a15d045f0647e9ae94e36ef122b5907",
+      "table_name": "fact_shipments"
+    }
+  ],
+  "total_parquet_bytes": 93305073,
+  "total_row_count": 2115352
+}

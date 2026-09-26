@@ -1,0 +1,17 @@
+"warehouse_key","warehouse_id","storage_capacity_cbm","site_id","warehouse_code","warehouse_name","warehouse_type","temperature_controlled_flag","active_flag","load_timestamp"
+1,"WH0001",738.0000,"S001","IN-W1-01","Pune Raw Material Warehouse","raw_material","N","Y",2026-09-20 09:33:49.572244Z
+2,"WH0002",574.0000,"S001","IN-W1-02","Pune Finished Goods Warehouse","finished_goods","N","Y",2026-09-20 09:33:49.572244Z
+3,"WH0003",504.0000,"S002","IN-W1-01","Nashik Raw Material Warehouse","raw_material","N","Y",2026-09-20 09:33:49.572244Z
+4,"WH0004",392.0000,"S002","IN-W1-02","Nashik Finished Goods Warehouse","finished_goods","N","Y",2026-09-20 09:33:49.572244Z
+5,"WH0005",666.0000,"S003","IN-W2-01","Ahmedabad Raw Material Warehouse","raw_material","N","Y",2026-09-20 09:33:49.572244Z
+6,"WH0006",518.0000,"S003","IN-W2-02","Ahmedabad Finished Goods Warehouse","finished_goods","N","Y",2026-09-20 09:33:49.572244Z
+7,"WH0007",612.0000,"S004","IN-S1-01","Bengaluru Raw Material Warehouse","raw_material","N","Y",2026-09-20 09:33:49.572244Z
+8,"WH0008",476.0000,"S004","IN-S1-02","Bengaluru Finished Goods Warehouse","finished_goods","Y","Y",2026-09-20 09:33:49.572244Z
+9,"WH0009",468.0000,"S005","IN-S2-01","Hyderabad Raw Material Warehouse","raw_material","N","Y",2026-09-20 09:33:49.572244Z
+10,"WH0010",364.0000,"S005","IN-S2-02","Hyderabad Finished Goods Warehouse","finished_goods","N","Y",2026-09-20 09:33:49.572244Z
+11,"WH0011",414.0000,"S006","IN-N1-01","Delhi Raw Material Warehouse","raw_material","N","Y",2026-09-20 09:33:49.572244Z
+12,"WH0012",322.0000,"S006","IN-N1-02","Delhi Finished Goods Warehouse","finished_goods","N","Y",2026-09-20 09:33:49.572244Z
+13,"WH0013",369.0000,"S007","IN-E1-01","Kolkata Raw Material Warehouse","raw_material","N","Y",2026-09-20 09:33:49.572244Z
+14,"WH0014",287.0000,"S007","IN-E1-02","Kolkata Finished Goods Warehouse","finished_goods","Y","Y",2026-09-20 09:33:49.572244Z
+15,"WH0015",351.0000,"S008","IN-C1-01","Indore Raw Material Warehouse","raw_material","N","Y",2026-09-20 09:33:49.572244Z
+16,"WH0016",273.0000,"S008","IN-C1-02","Indore Finished Goods Warehouse","finished_goods","N","Y",2026-09-20 09:33:49.572244Z
