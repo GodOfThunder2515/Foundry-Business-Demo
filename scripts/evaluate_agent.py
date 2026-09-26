@@ -13,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
-from scripts.create_agent import STATE_PATH, load_state, required_config
+from scripts.create_agent import load_state, required_config, state_path
 from src.evaluation import (
     batch_cases,
     evaluate_response,
@@ -74,7 +74,7 @@ def main() -> int:
 
     load_dotenv()
     config = required_config(os.environ)
-    state = load_state(STATE_PATH)
+    state = load_state(state_path(os.environ))
     if state is None:
         print("FAIL: no recorded persistent deployment; run create_agent.py deploy")
         return 1

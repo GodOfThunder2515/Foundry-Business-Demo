@@ -5,10 +5,17 @@ from pathlib import Path
 
 from src.evaluation import (
     batch_cases,
+    classify_demo_verdict,
+    evaluate_demo_response,
+    extract_markdown_tables,
+    group_demo_cases,
     evaluate_response,
     load_cases,
+    load_known_ids,
+    render_demo_report,
     run_with_rate_limit_retry,
     select_cases,
+    serialize_response,
 )
 from scripts.evaluate_agent import evaluation_agent_reference, evaluation_prompt
 
@@ -38,6 +45,21 @@ class LoadCasesTests(unittest.TestCase):
         cases = load_cases(ROOT / "evaluations/golden_questions.json")
         self.assertEqual(len(cases), 18)
         self.assertEqual(sum(case.get("smoke", False) for case in cases), 5)
+
+    def test_demo_dataset_has_ten_golden_questions_in_two_demo_chats(self):
+        cases = load_cases(ROOT / "evaluations/demo_questions.json")
+
+        kinds = [case["kind"] for case in cases]
+        self.assertEqual(kinds.count("golden"), 10)
+        self.assertGreaterEqual(kinds.count("alternate"), 3)
+        self.assertGreaterEqual(kinds.count("variant"), 2)
+        self.assertGreaterEqual(kinds.count("metadata"), 4)
+        self.assertLessEqual(set(kinds), {"golden", "alternate", "variant", "metadata"})
+        golden = [case for case in cases if case["kind"] == "golden"]
+        self.assertEqual({case["conversation_group"] for case in golden}, {"demo_1", "demo_2"})
+        self.assertEqual({case["tier"] for case in golden}, {"quick", "deep"})
+        for case in golden:
+            self.assertNotRegex(case["question"], r"_|\bS00\d\b|\bSOL\d|\bWH\d|\.csv", case["id"])
 
     def test_inventory_oracle_defines_its_population_and_status_formula(self):
         cases = load_cases(ROOT / "evaluations/golden_questions.json")
@@ -161,6 +183,50 @@ class RateLimitRetryTests(unittest.TestCase):
         self.assertEqual(len(attempts), 2)
         self.assertEqual(sleeps, [5])
 
+    def test_retries_expired_code_interpreter_container(self):
+        class ConflictError(Exception):
+            status_code = 409
+
+        attempts: list[int] = []
+        sleeps: list[float] = []
+
+        def operation():
+            attempts.append(1)
+            if len(attempts) == 1:
+                raise ConflictError("Error code: 409 - {'code': 'container_expired'}")
+            return "ok"
+
+        result = run_with_rate_limit_retry(operation, sleeps.append, delay=60)
+
+        self.assertEqual(result, "ok")
+        self.assertEqual(sleeps, [5])
+
+    def test_retries_transient_connection_errors(self):
+        class APIConnectionError(Exception):
+            pass
+
+        attempts: list[int] = []
+        sleeps: list[float] = []
+
+        def operation():
+            attempts.append(1)
+            if len(attempts) == 1:
+                raise APIConnectionError("Connection error.")
+            return "ok"
+
+        self.assertEqual(run_with_rate_limit_retry(operation, sleeps.append, delay=60), "ok")
+        self.assertEqual(sleeps, [5])
+
+    def test_does_not_retry_other_conflicts(self):
+        class ConflictError(Exception):
+            status_code = 409
+
+        def operation():
+            raise ConflictError("some other conflict")
+
+        with self.assertRaisesRegex(ConflictError, "other conflict"):
+            run_with_rate_limit_retry(operation, lambda _: None)
+
     def test_does_not_retry_non_rate_limit_error(self):
         attempts: list[int] = []
 
@@ -270,6 +336,167 @@ class EvaluateResponseTests(unittest.TestCase):
     def test_optional_qualitative_trailer_does_not_apply_detail_cap(self):
         case = self.case(expected_metrics={}, required_qualifiers=[])
         self.assertEqual(evaluate_response(case, self.response(detail_rows=15), True), [])
+
+
+class DemoEvaluationTests(unittest.TestCase):
+    def test_extracts_markdown_table_shape_and_record_ids(self):
+        text = """Answer.\n\n| sales_order_line_id | value |\n|---|---:|\n| SOL1 | ₹1,200.00 |\n| SOL2 | ₹900.00 |"""
+
+        tables = extract_markdown_tables(text)
+
+        self.assertEqual(tables[0]["columns"], ["sales_order_line_id", "value"])
+        self.assertEqual(len(tables[0]["rows"]), 2)
+        self.assertEqual(tables[0]["rows"][0]["sales_order_line_id"], "SOL1")
+
+    def test_requires_table_in_final_answer_and_enforces_caps(self):
+        case = {
+            "requires_code_interpreter": True,
+            "table": {"required": True, "max_rows": 1, "max_columns": 2},
+        }
+        no_table = evaluate_demo_response(case, "The Python output had a table.", True)
+        too_many_rows = evaluate_demo_response(
+            case,
+            "| id | value |\n|---|---|\n| A | 1 |\n| B | 2 |",
+            True,
+        )
+
+        self.assertIn("Required Markdown table missing from final answer", no_table["errors"])
+        self.assertTrue(any("row cap" in error for error in too_many_rows["errors"]))
+
+    def test_matches_values_despite_business_formatting(self):
+        case = {
+            "requires_code_interpreter": True,
+            "required_values": ["6612240.06", "SOL000213367"],
+        }
+
+        result = evaluate_demo_response(
+            case,
+            "Exposure is ₹6,612,240.06 for SOL000213367.",
+            True,
+        )
+
+        self.assertEqual(result["errors"], [])
+
+    def test_rejects_page_overlap(self):
+        case = {
+            "requires_code_interpreter": True,
+            "table": {
+                "required": True,
+                "max_rows": 10,
+                "max_columns": 12,
+                "record_id_column": "sales_order_line_id",
+            },
+        }
+        text = "| sales_order_line_id |\n|---|\n| SOL1 |\n| SOL2 |"
+
+        result = evaluate_demo_response(
+            case, text, True, prior_record_ids={"SOL1"}
+        )
+
+        self.assertTrue(any("overlap" in error for error in result["errors"]))
+        self.assertEqual(result["record_ids"], ["SOL1", "SOL2"])
+
+    def test_flags_record_ids_that_do_not_exist_in_source_data(self):
+        case = {"requires_code_interpreter": True}
+        text = "Act on SOL000213367 and SOL000012345 (order SO000001234)."
+
+        result = evaluate_demo_response(
+            case, text, True, known_ids={"SOL000213367", "SO000081226"}
+        )
+
+        self.assertIn(
+            "Unknown record IDs (possible fabrication): SO000001234, SOL000012345",
+            result["errors"],
+        )
+
+    def test_known_ids_check_is_skipped_without_reference_set(self):
+        result = evaluate_demo_response({}, "SOL000012345", False)
+
+        self.assertEqual(result["errors"], [])
+
+    def test_enforces_prose_word_limit_excluding_tables(self):
+        case = {"max_words": 5}
+        table = "| a | b |\n|---|---|\n" + "| word word word | x |\n" * 5
+
+        within = evaluate_demo_response(case, "One two three four.\n\n" + table, False)
+        over = evaluate_demo_response(case, "One two three four five six.", False)
+
+        self.assertEqual(within["errors"], [])
+        self.assertIn("Answer too long: 6 words > 5", over["errors"])
+
+    def test_negated_forbidden_claim_is_not_a_claim(self):
+        case = {"forbidden_claims": ["live prediction", "hold has been released"]}
+
+        negated = evaluate_demo_response(case, "These are replay scores, not live predictions.", False)
+        asserted = evaluate_demo_response(case, "These are live predictions.", False)
+        released = evaluate_demo_response(case, "The hold has been released.", False)
+
+        self.assertEqual(negated["errors"], [])
+        self.assertIn("Forbidden claim present: live prediction", asserted["errors"])
+        self.assertIn("Forbidden claim present: hold has been released", released["errors"])
+
+    def test_rejects_any_snake_case_code_but_not_the_model_name(self):
+        flagged = evaluate_demo_response({}, "| Hold |\n|---|\n| credit_limit |", False)
+        allowed = evaluate_demo_response({}, "*Scope: replay scores from logistic_regression v1.*", False)
+
+        self.assertTrue(any("credit_limit" in error for error in flagged["errors"]))
+        self.assertEqual(allowed["errors"], [])
+
+    def test_rejects_printed_source_tags_in_any_form(self):
+        for text in ("Revenue ₹4.84M (printed).", "Revenue ₹4.84M. (Printed: 1406, 1020.)"):
+            result = evaluate_demo_response({}, text, False)
+            self.assertTrue(any("(printed" in error for error in result["errors"]), text)
+
+    def test_rejects_method_narration_and_raw_column_names(self):
+        result = evaluate_demo_response({}, "What I did: filtered operational_queue_status.", False)
+
+        self.assertTrue(any("what i did" in error for error in result["errors"]))
+        self.assertTrue(any("operational_queue_status" in error for error in result["errors"]))
+        self.assertEqual(
+            evaluate_demo_response({"style_checks": False}, "What I did", False)["errors"], []
+        )
+
+    def test_loads_known_ids_from_sales_csv(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "fact_sales.csv"
+            path.write_text(
+                "sales_order_line_id,sales_order_id,x\nSOL000000001,SO000000001,1\n",
+                encoding="utf-8",
+            )
+
+            self.assertEqual(load_known_ids(path), {"SOL000000001", "SO000000001"})
+
+    def test_serializes_response_without_losing_tool_output(self):
+        class Response:
+            def model_dump(self, **_kwargs):
+                return {
+                    "id": "resp-1",
+                    "output": [{"type": "code_interpreter_call", "code": "print(1)"}],
+                }
+
+        payload = serialize_response(Response())
+
+        self.assertEqual(payload["output"][0]["type"], "code_interpreter_call")
+        self.assertEqual(payload["output"][0]["code"], "print(1)")
+
+    def test_verdict_thresholds_and_report_sections(self):
+        self.assertEqual(classify_demo_verdict(["hard failure"], [2, 2]), "FAIL")
+        self.assertEqual(classify_demo_verdict([], [2, 2, 2, 2, 2]), "PASS")
+        self.assertEqual(classify_demo_verdict([], [1, 1, 1, 2, 2]), "PARTIAL")
+
+        report = render_demo_report(
+            [{
+                "id": "q1",
+                "question": "Question?",
+                "errors": [],
+                "code_interpreter_called": True,
+                "elapsed_seconds": 1.2,
+            }]
+        )
+        self.assertIn("## q1", report)
+        self.assertIn("What worked well", report)
+        self.assertIn("What went wrong", report)
+        self.assertIn("Manual review pending", report)
 
 
 if __name__ == "__main__":
