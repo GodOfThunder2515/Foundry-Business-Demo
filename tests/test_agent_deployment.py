@@ -4,13 +4,18 @@ import unittest
 from pathlib import Path
 
 from scripts.create_agent import (
+    STATE_PATH,
     cleanup_recorded_resources,
     finalize_deployment,
     load_state,
     prompt_agent_options,
     provision_resources,
+    provision_update,
     required_config,
+    reusable_files,
     save_state,
+    state_path,
+    updated_state,
 )
 
 
@@ -80,12 +85,56 @@ class ConfigTests(unittest.TestCase):
                 }
             )
 
+    def base_environ(self, **overrides):
+        environ = {
+            "FOUNDRY_PROJECT_ENDPOINT": "https://example.test/project",
+            "FOUNDRY_MODEL_DEPLOYMENT": "gpt-5-mini",
+            "FOUNDRY_AGENT_NAME": "manufacturing-agent",
+        }
+        environ.update(overrides)
+        return environ
+
+    def test_reasoning_effort_defaults_to_medium(self):
+        self.assertEqual(required_config(self.base_environ())["reasoning_effort"], "medium")
+
+    def test_accepts_gpt_6_luna_with_xhigh_or_max_reasoning(self):
+        for effort in ("xhigh", "max"):
+            config = required_config(
+                self.base_environ(
+                    FOUNDRY_MODEL_DEPLOYMENT="gpt-6-luna", FOUNDRY_REASONING_EFFORT=effort
+                )
+            )
+            self.assertEqual(config["model_deployment"], "gpt-6-luna")
+            self.assertEqual(config["reasoning_effort"], effort)
+
+    def test_rejects_unknown_reasoning_effort(self):
+        with self.assertRaisesRegex(ValueError, "FOUNDRY_REASONING_EFFORT"):
+            required_config(self.base_environ(FOUNDRY_REASONING_EFFORT="extreme"))
+
+    def test_max_reasoning_requires_a_gpt_6_model(self):
+        with self.assertRaisesRegex(ValueError, "max"):
+            required_config(self.base_environ(FOUNDRY_REASONING_EFFORT="max"))
+
+    def test_state_path_defaults_and_can_be_overridden(self):
+        self.assertEqual(state_path(self.base_environ()), STATE_PATH)
+        trial = state_path(self.base_environ(FOUNDRY_STATE_FILE=".foundry/trial-state.json"))
+        self.assertEqual(trial.name, "trial-state.json")
+        self.assertNotEqual(trial, STATE_PATH)
+
     def test_prompt_agent_uses_medium_reasoning_without_sampling_temperature(self):
         options = prompt_agent_options("gpt-5-mini", "instructions", ["tool"])
 
         self.assertEqual(options["reasoning"], {"effort": "medium"})
+        self.assertEqual(options["text"], {"verbosity": "low"})
         self.assertNotIn("temperature", options)
         self.assertEqual(options["model"], "gpt-5-mini")
+
+    def test_prompt_agent_passes_configured_reasoning_effort(self):
+        options = prompt_agent_options(
+            "gpt-6-luna", "instructions", ["tool"], reasoning_effort="xhigh"
+        )
+
+        self.assertEqual(options["reasoning"], {"effort": "xhigh"})
 
 
 class StateTests(unittest.TestCase):
@@ -216,6 +265,97 @@ class CleanupTests(unittest.TestCase):
 
         self.assertEqual(project.agents.deleted, [("manufacturing-agent", "4")])
         self.assertEqual(openai.files.deleted, ["new-file"])
+
+
+class UpdateTests(unittest.TestCase):
+    def make_paths(self, root: Path, names: list[str]) -> list[Path]:
+        paths = []
+        for name in names:
+            path = root / name
+            path.write_text("x", encoding="utf-8")
+            paths.append(path)
+        return paths
+
+    def test_reuses_recorded_files_and_uploads_only_refreshed_ones(self):
+        with tempfile.TemporaryDirectory() as directory:
+            openai = FakeOpenAI()
+            paths = self.make_paths(Path(directory), ["fact_sales.csv", "analysis_helper.py", "late_order_risk.csv"])
+            received = []
+
+            agent, file_ids, uploaded = provision_update(
+                openai,
+                paths,
+                {"fact_sales.csv": "old-sales", "late_order_risk.csv": "old-risk"},
+                lambda ids: received.append(ids) or "agent",
+            )
+
+            self.assertEqual(agent, "agent")
+            self.assertEqual(file_ids, ["old-sales", "file-1", "old-risk"])
+            self.assertEqual(received, [file_ids])
+            self.assertEqual(uploaded, ["file-1"])
+
+    def test_update_failure_deletes_only_new_uploads(self):
+        with tempfile.TemporaryDirectory() as directory:
+            openai = FakeOpenAI()
+            paths = self.make_paths(Path(directory), ["fact_sales.csv", "analysis_helper.py"])
+
+            def fail(_ids):
+                raise RuntimeError("agent failed")
+
+            with self.assertRaisesRegex(RuntimeError, "agent failed"):
+                provision_update(openai, paths, {"fact_sales.csv": "old-sales"}, fail)
+
+            self.assertEqual(openai.files.deleted, ["file-1"])
+
+    def test_reusable_files_exclude_refreshed_assets(self):
+        state = {"files": {"fact_sales.csv": "f1", "analysis_helper.py": "h1", "dataset_catalog.json": "c1"}}
+
+        self.assertEqual(reusable_files(state, lambda _id: None), {"fact_sales.csv": "f1"})
+
+    def test_reusable_files_resolves_legacy_state_by_lookup(self):
+        state = {"file_ids": ["f1", "h1"]}
+        names = {"f1": "fact_sales.csv", "h1": "analysis_helper.py"}
+
+        self.assertEqual(reusable_files(state, names.__getitem__), {"fact_sales.csv": "f1"})
+
+    def test_updated_state_retains_previous_version_and_replaced_files(self):
+        previous = {
+            "agent_name": "agent",
+            "agent_version": "8",
+            "file_ids": ["f1", "h1"],
+            "retained": [{"agent_version": "7", "file_ids": ["h0"]}],
+        }
+
+        state = updated_state(
+            previous,
+            agent_version="9",
+            files={"fact_sales.csv": "f1", "analysis_helper.py": "h2"},
+            model_deployment="gpt-5-mini",
+            reasoning_effort="high",
+        )
+
+        self.assertEqual(state["agent_version"], "9")
+        self.assertEqual(state["reasoning_effort"], "high")
+        self.assertEqual(state["file_ids"], ["f1", "h2"])
+        self.assertEqual(
+            state["retained"],
+            [{"agent_version": "7", "file_ids": ["h0"]}, {"agent_version": "8", "file_ids": ["h1"]}],
+        )
+
+    def test_cleanup_also_deletes_retained_versions_and_files(self):
+        project = FakeProject()
+        openai = FakeOpenAI()
+        state = {
+            "agent_name": "agent",
+            "agent_version": "9",
+            "file_ids": ["f1", "h2"],
+            "retained": [{"agent_version": "8", "file_ids": ["h1"]}],
+        }
+
+        cleanup_recorded_resources(project, openai, state)
+
+        self.assertEqual(project.agents.deleted, [("agent", "9"), ("agent", "8")])
+        self.assertEqual(openai.files.deleted, ["f1", "h2", "h1"])
 
 
 if __name__ == "__main__":
