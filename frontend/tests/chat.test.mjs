@@ -133,6 +133,26 @@ test("retry returns the failed chat to analyzing without duplicating the questio
   assert.equal(state.chats[0].retryQuestion, "Question to retry");
 });
 
+test("completed chats retain their last question for run-again", () => {
+  let state = addChat(createChatState(), "chat-1");
+  state = chatReducer(state, {
+    type: "submit",
+    chatId: "chat-1",
+    messageId: "message-1",
+    content: "Question to run again",
+  });
+  state = chatReducer(state, {
+    type: "resolve",
+    chatId: "chat-1",
+    messageId: "message-2",
+    answer: "Grounded answer",
+    responseId: "resp-1",
+    agentSessionId: "session-1",
+  });
+
+  assert.equal(state.chats[0].retryQuestion, "Question to run again");
+});
+
 test("postChat maps the Function request and response contract", async () => {
   let captured;
   const fetchImpl = async (url, init) => {

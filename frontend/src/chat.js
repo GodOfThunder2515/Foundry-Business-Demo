@@ -80,7 +80,6 @@ export function chatReducer(state, action) {
         responseId: action.responseId || "",
         agentSessionId: action.agentSessionId || "",
         status: "idle",
-        retryQuestion: "",
       }));
     case "reject":
       return updateChat(state, action.chatId, (chat) => ({ ...chat, status: "error" }));

@@ -290,7 +290,7 @@ function Welcome({ composer, setComposer, onSubmit }) {
   );
 }
 
-function Conversation({ chat, onRetry, onNewChat, onCopy, copiedId, errorHeadingRef }) {
+function Conversation({ chat, onRetry, onNewChat, onCopy, copiedId, errorHeadingRef, endRef }) {
   return (
     <div className="conversation" role="log" aria-live="polite" aria-label="Analysis conversation">
       {chat.messages.map((message) =>
@@ -315,6 +315,7 @@ function Conversation({ chat, onRetry, onNewChat, onCopy, copiedId, errorHeading
       {chat.status === "error" && (
         <ErrorState onRetry={onRetry} onNewChat={onNewChat} headingRef={errorHeadingRef} />
       )}
+      <div ref={endRef} />
     </div>
   );
 }
@@ -380,7 +381,11 @@ function Workspace() {
   }
 
   async function copyMessage(message) {
-    await navigator.clipboard.writeText(message.content);
+    try {
+      await navigator.clipboard.writeText(message.content);
+    } catch {
+      return;
+    }
     setCopiedId(message.id);
     setTimeout(() => setCopiedId(""), 1500);
   }
@@ -421,8 +426,8 @@ function Workspace() {
               onCopy={copyMessage}
               copiedId={copiedId}
               errorHeadingRef={errorHeadingRef}
+              endRef={endRef}
             />
-            <div ref={endRef} />
             <div className="docked-composer">
               <Composer
                 value={composer}
