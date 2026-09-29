@@ -6,10 +6,20 @@ import {
   buildChatRequest,
   chatReducer,
   createChatState,
+  findDemoUser,
   isValidLogin,
   postChat,
 } from "../src/chat.js";
-import { SUGGESTED_QUESTIONS, THINKING_MESSAGES } from "../src/content.js";
+import {
+  FOLLOW_UP_COUNT,
+  FOLLOW_UP_QUESTIONS,
+  GREETINGS,
+  SUGGESTED_QUESTIONS,
+  THINKING_MESSAGES,
+  pickFollowUps,
+  pickGreeting,
+  timeOfDay,
+} from "../src/content.js";
 
 const addChat = (state, id) => chatReducer(state, { type: "new-chat", id });
 
@@ -23,6 +33,20 @@ test("approved recommendations and thinking copy remain exact", () => {
   assert.equal(THINKING_MESSAGES.length, 9);
   assert.equal(THINKING_MESSAGES[0], "Reviewing order commitments…");
   assert.equal(THINKING_MESSAGES.at(-1), "Preparing an evidence-backed response…");
+});
+
+test("each demo account signs in with the shared password and carries its own name", () => {
+  const cases = [
+    ["abhishek.bhosale@scatterpie.io", "Abhishek", "Abhishek Bhosale", "AB"],
+    ["gaurav@ScatterPie.io", "Gaurav", "Gaurav", "G"],
+    ["manish.parmar@scatterpie.io", "Manish", "Manish Parmar", "MP"],
+    ["ashish@scatterpie.io", "Ashish", "Ashish", "A"],
+  ];
+  for (const [email, firstName, fullName, initials] of cases) {
+    assert.deepEqual(findDemoUser(`  ${email.toUpperCase()} `, "Test@123"), { firstName, fullName, initials });
+    assert.equal(findDemoUser(email, "test@123"), null);
+  }
+  assert.equal(findDemoUser("nobody@scatterpie.io", "Test@123"), null);
 });
 
 test("demo login accepts only the configured credentials", () => {
@@ -198,4 +222,62 @@ test("postChat returns only a safe client error", async () => {
     postChat({ message: "Question" }, { fetchImpl }),
     (error) => error.message === "We couldn’t complete that analysis.",
   );
+});
+
+test("follow-ups draw three distinct questions from the configurable pool", () => {
+  assert.equal(FOLLOW_UP_COUNT, 3);
+  assert.equal(FOLLOW_UP_QUESTIONS.length, 8);
+  assert.equal(new Set(FOLLOW_UP_QUESTIONS).size, FOLLOW_UP_QUESTIONS.length);
+  assert.ok(SUGGESTED_QUESTIONS.every((question) => FOLLOW_UP_QUESTIONS.includes(question)));
+  assert.ok(FOLLOW_UP_QUESTIONS.includes("How much cash is tied up in overdue invoices, and who owes us the most?"));
+
+  const picked = pickFollowUps(FOLLOW_UP_QUESTIONS);
+  assert.equal(picked.length, 3);
+  assert.equal(new Set(picked).size, 3);
+  assert.ok(picked.every((question) => FOLLOW_UP_QUESTIONS.includes(question)));
+});
+
+test("follow-ups prefer questions not yet asked and scale to a larger pool", () => {
+  const pool = Array.from({ length: 10 }, (_, index) => `Question ${index + 1}?`);
+  const asked = [" question 1? ", "Question 2?"];
+  for (let run = 0; run < 25; run += 1) {
+    const picked = pickFollowUps(pool, 3, asked);
+    assert.equal(new Set(picked).size, 3);
+    assert.ok(picked.every((question) => !["Question 1?", "Question 2?"].includes(question)));
+  }
+
+  const small = ["A?", "B?", "C?", "D?"];
+  const fallback = pickFollowUps(small, 3, ["A?", "B?"], () => 0);
+  assert.equal(fallback.length, 3);
+  assert.deepEqual(fallback.slice(0, 2).sort(), ["C?", "D?"]);
+  assert.ok(["A?", "B?"].includes(fallback[2]));
+});
+
+test("time of day splits into morning, afternoon and evening", () => {
+  const at = (hour) => timeOfDay(new Date(2026, 8, 28, hour, 30));
+  assert.equal(at(4), "evening");
+  assert.equal(at(5), "morning");
+  assert.equal(at(11), "morning");
+  assert.equal(at(12), "afternoon");
+  assert.equal(at(16), "afternoon");
+  assert.equal(at(17), "evening");
+  assert.equal(at(23), "evening");
+});
+
+test("greeting is drawn from the current time-of-day pool with the name filled in", () => {
+  for (const period of ["morning", "afternoon", "evening"]) {
+    assert.equal(GREETINGS[period].length, 4);
+  }
+
+  const morning = new Date(2026, 8, 28, 8, 0);
+  assert.deepEqual(pickGreeting("Abhishek", morning, () => 0), {
+    title: "Good morning, Abhishek.",
+    prompt: "Coffee's on. Where should we look first?",
+  });
+
+  const late = pickGreeting("Abhishek", new Date(2026, 8, 28, 23, 0), () => 0.99);
+  assert.deepEqual(late, {
+    title: "Working late, Abhishek?",
+    prompt: "Let's make it quick. What do you need to know?",
+  });
 });

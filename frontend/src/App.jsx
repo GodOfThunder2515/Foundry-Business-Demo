@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
   ArrowClockwise,
+  ArrowBendDownRight,
   ArrowRight,
+  CaretLeft,
   CaretRight,
   ChatCircle,
   Copy,
@@ -20,19 +22,32 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { chatReducer, createChatState, isValidLogin, postChat } from "./chat.js";
-import { SUGGESTED_QUESTIONS, THINKING_MESSAGES } from "./content.js";
+import { chatReducer, createChatState, findDemoUser, postChat } from "./chat.js";
+import {
+  FOLLOW_UP_QUESTIONS,
+  SUGGESTED_QUESTIONS,
+  THINKING_MESSAGES,
+  pickFollowUps,
+  pickGreeting,
+} from "./content.js";
 
 const SNAPSHOT_LABEL = "Snapshot · 15 Sep 2026";
+const SIDEBAR_KEY = "mct.sidebar";
 const makeId = () => crypto.randomUUID();
 
-function Brand({ compact = false }) {
+function Brand({ compact = false, foundry = false }) {
   return (
     <div className={`brand ${compact ? "brand--compact" : ""}`}>
       <img src="/sp-logo.png" alt="" className="brand__mark" />
       <div>
         <strong>ScatterPie</strong>
-        {!compact && <span>Luminous Operations Studio</span>}
+        {!compact && (foundry ? (
+          <span className="brand__foundry">
+            <span className="brand__foundry-label">Powered by</span>
+            <span className="brand__foundry-name">Azure Foundry</span>
+            <img src="/azure_foundry_logo.png" alt="" />
+          </span>
+        ) : <span>Luminous Operations Studio</span>)}
       </div>
     </div>
   );
@@ -46,12 +61,13 @@ function LoginScreen({ onSuccess }) {
 
   function submit(event) {
     event.preventDefault();
-    if (!isValidLogin(email, password)) {
+    const user = findDemoUser(email, password);
+    if (!user) {
       setError("The email or password is incorrect.");
       return;
     }
     setError("");
-    onSuccess();
+    onSuccess(user);
   }
 
   return (
@@ -123,23 +139,46 @@ function LoginScreen({ onSuccess }) {
   );
 }
 
-function Sidebar({ chats, activeChatId, open, onClose, onNewChat, onSelectChat }) {
+function Sidebar({
+  user,
+  chats,
+  activeChatId,
+  open,
+  collapsed,
+  onToggleCollapsed,
+  onClose,
+  onNewChat,
+  onSelectChat,
+}) {
   const history = chats.filter((chat) => chat.messages.length > 0);
+  const toggleLabel = collapsed ? "Expand sidebar" : "Collapse sidebar";
 
   return (
     <>
       {open && <button className="drawer-backdrop" onClick={onClose} aria-label="Close navigation" />}
-      <aside className={`sidebar ${open ? "sidebar--open" : ""}`} aria-label="Analysis history">
+      <aside
+        className={`sidebar ${open ? "sidebar--open" : ""} ${collapsed ? "sidebar--collapsed" : ""}`}
+        aria-label="Analysis history"
+      >
+        <button
+          className="sidebar__toggle"
+          onClick={onToggleCollapsed}
+          aria-label={toggleLabel}
+          aria-expanded={!collapsed}
+          title={toggleLabel}
+        >
+          <CaretLeft size={13} weight="bold" />
+        </button>
         <div className="sidebar__topline">
-          <Brand />
+          <Brand foundry />
           <button className="icon-button sidebar__close" onClick={onClose} aria-label="Close navigation">
             <X size={20} />
           </button>
         </div>
 
-        <button className="new-analysis" onClick={onNewChat}>
+        <button className="new-analysis" onClick={onNewChat} title={collapsed ? "New analysis" : undefined}>
           <Plus size={20} />
-          New analysis
+          <span className="sidebar__text">New analysis</span>
         </button>
 
         <div className="sidebar__divider" />
@@ -162,9 +201,9 @@ function Sidebar({ chats, activeChatId, open, onClose, onNewChat, onSelectChat }
         </nav>
 
         <div className="sidebar-user">
-          <span className="avatar">AB</span>
-          <span>Abhishek Bhosale</span>
-          <CaretRight size={17} aria-hidden="true" />
+          <span className="avatar">{user.initials}</span>
+          <span className="sidebar__text">{user.fullName}</span>
+          <CaretRight className="sidebar__text" size={17} aria-hidden="true" />
         </div>
       </aside>
     </>
@@ -238,7 +277,9 @@ function MarkdownResponse({ content }) {
           <a {...props} target="_blank" rel="noreferrer">{children}</a>
         ),
         table: ({ children }) => (
-          <div className="table-scroll"><table>{children}</table></div>
+          <div className="table-scroll" role="region" aria-label="Scrollable analysis table" tabIndex="0">
+            <table>{children}</table>
+          </div>
         ),
       }}
     >
@@ -265,12 +306,15 @@ function ErrorState({ onRetry, onNewChat, headingRef }) {
   );
 }
 
-function Welcome({ composer, setComposer, onSubmit }) {
+function Welcome({ firstName, composer, setComposer, onSubmit }) {
+  // Picked once per welcome screen so the greeting stays put while the user types.
+  const [greeting] = useState(() => pickGreeting(firstName));
+
   return (
     <section className="welcome" aria-labelledby="welcome-title">
       <h1 id="welcome-title">
-        <span>Good morning, Abhishek.</span>
-        What should we analyze today?
+        <span>{greeting.title}</span>
+        {greeting.prompt}
       </h1>
       <Composer value={composer} onChange={setComposer} onSubmit={() => onSubmit(composer)} />
 
@@ -290,7 +334,33 @@ function Welcome({ composer, setComposer, onSubmit }) {
   );
 }
 
-function Conversation({ chat, onRetry, onNewChat, onCopy, copiedId, errorHeadingRef, endRef }) {
+function FollowUps({ asked, onAsk }) {
+  // Picked once per answer so the suggestions don't reshuffle on re-render.
+  const [questions] = useState(() => pickFollowUps(FOLLOW_UP_QUESTIONS, undefined, asked));
+
+  return (
+    <section className="follow-ups" aria-labelledby="follow-ups-title">
+      <h3 id="follow-ups-title">Suggested follow-ups</h3>
+      <ul>
+        {questions.map((question) => (
+          <li key={question}>
+            <button onClick={() => onAsk(question)}>
+              <ArrowBendDownRight size={16} aria-hidden="true" />
+              <span>{question}</span>
+              <ArrowRight className="follow-ups__go" size={15} aria-hidden="true" />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function Conversation({ chat, onAsk, onRetry, onNewChat, onCopy, copiedId, errorHeadingRef, endRef }) {
+  const lastMessage = chat.messages.at(-1);
+  const showFollowUps = lastMessage?.role === "assistant" && chat.status !== "analyzing" && chat.status !== "error";
+  const asked = chat.messages.filter((message) => message.role === "user").map((message) => message.content);
+
   return (
     <div className="conversation" role="log" aria-live="polite" aria-label="Analysis conversation">
       {chat.messages.map((message) =>
@@ -308,6 +378,9 @@ function Conversation({ chat, onRetry, onNewChat, onCopy, copiedId, errorHeading
               <button onClick={onRetry} aria-label="Run this analysis again"><ArrowClockwise size={17} /></button>
               {copiedId === message.id && <span role="status">Copied</span>}
             </div>
+            {showFollowUps && message === lastMessage && (
+              <FollowUps key={message.id} asked={asked} onAsk={onAsk} />
+            )}
           </article>
         ),
       )}
@@ -320,12 +393,19 @@ function Conversation({ chat, onRetry, onNewChat, onCopy, copiedId, errorHeading
   );
 }
 
-function Workspace() {
+function Workspace({ user }) {
   const [state, dispatch] = useReducer(chatReducer, undefined, () =>
     chatReducer(createChatState(), { type: "new-chat", id: makeId() }),
   );
   const [composer, setComposer] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_KEY) === "collapsed";
+    } catch {
+      return false;
+    }
+  });
   const [copiedId, setCopiedId] = useState("");
   const endRef = useRef(null);
   const errorHeadingRef = useRef(null);
@@ -343,6 +423,18 @@ function Workspace() {
   useEffect(() => {
     if (activeChat?.status === "error") errorHeadingRef.current?.focus();
   }, [activeChat?.status]);
+
+  function toggleSidebar() {
+    setSidebarCollapsed((current) => {
+      const next = !current;
+      try {
+        localStorage.setItem(SIDEBAR_KEY, next ? "collapsed" : "expanded");
+      } catch {
+        // Persistence is a convenience only.
+      }
+      return next;
+    });
+  }
 
   function newAnalysis() {
     if (!activeChat || activeChat.messages.length > 0) {
@@ -391,11 +483,14 @@ function Workspace() {
   }
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell ${sidebarCollapsed ? "app-shell--collapsed" : ""}`}>
       <Sidebar
+        user={user}
         chats={state.chats}
         activeChatId={state.activeChatId}
         open={drawerOpen}
+        collapsed={sidebarCollapsed}
+        onToggleCollapsed={toggleSidebar}
         onClose={() => setDrawerOpen(false)}
         onNewChat={newAnalysis}
         onSelectChat={(id) => {
@@ -421,6 +516,7 @@ function Workspace() {
           <div className="conversation-layout">
             <Conversation
               chat={activeChat}
+              onAsk={submit}
               onRetry={retry}
               onNewChat={newAnalysis}
               onCopy={copyMessage}
@@ -436,16 +532,18 @@ function Workspace() {
                 disabled={activeChat.status === "analyzing"}
                 docked
               />
-              <p>Synthetic snapshot &nbsp;•&nbsp; Recommendations require human approval.</p>
+              <div className="workspace-notes">
+                <p>© 2026 ScatterPie Analytics Pvt. Ltd. <span aria-hidden="true">•</span> <span className="privacy-policy">Privacy Policy</span></p>
+              </div>
             </div>
           </div>
         ) : (
-          <Welcome composer={composer} setComposer={setComposer} onSubmit={submit} />
+          <Welcome firstName={user.firstName} composer={composer} setComposer={setComposer} onSubmit={submit} />
         )}
 
         {!hasConversation && (
-          <footer className="workspace-footer">
-            Synthetic snapshot &nbsp;•&nbsp; Recommendations require human approval.
+          <footer className="workspace-footer workspace-notes">
+            <p>© 2026 ScatterPie Analytics Pvt. Ltd. <span aria-hidden="true">•</span> <span className="privacy-policy">Privacy Policy</span></p>
           </footer>
         )}
       </section>
@@ -454,6 +552,6 @@ function Workspace() {
 }
 
 export function App() {
-  const [authenticated, setAuthenticated] = useState(false);
-  return authenticated ? <Workspace /> : <LoginScreen onSuccess={() => setAuthenticated(true)} />;
+  const [user, setUser] = useState(null);
+  return user ? <Workspace user={user} /> : <LoginScreen onSuccess={setUser} />;
 }

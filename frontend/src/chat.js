@@ -1,10 +1,27 @@
 export const REQUEST_TIMEOUT_MS = 120_000;
 
-const DEMO_EMAIL = "abhishek.bhosale@scatterpie.io";
+// Demo-only accounts; every account shares DEMO_PASSWORD. Emails are matched case-insensitively.
 const DEMO_PASSWORD = "Test@123";
+const DEMO_USERS = {
+  "abhishek.bhosale@scatterpie.io": "Abhishek Bhosale",
+  "gaurav@scatterpie.io": "Gaurav",
+  "manish.parmar@scatterpie.io": "Manish Parmar",
+  "ashish@scatterpie.io": "Ashish",
+};
+
+export function findDemoUser(email, password) {
+  const fullName = DEMO_USERS[email.trim().toLowerCase()];
+  if (!fullName || password !== DEMO_PASSWORD) return null;
+  const words = fullName.split(" ");
+  return {
+    firstName: words[0],
+    fullName,
+    initials: words.map((word) => word[0]).join("").toUpperCase(),
+  };
+}
 
 export function isValidLogin(email, password) {
-  return email.trim().toLowerCase() === DEMO_EMAIL && password === DEMO_PASSWORD;
+  return findDemoUser(email, password) !== null;
 }
 
 export function buildChatRequest(message, previousResponseId = "", agentSessionId = "") {
